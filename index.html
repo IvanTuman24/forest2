@@ -3,33 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ЛЕС 1 - COMPLETE</title>
+    <title>ЛЕС 1 - STABLE</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --accent: #00ffcc; --panel: #111411; --ws: 5s; --wp: 2deg; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: #eee; }
         
-        /* Начальный экран */
         #selector { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px; }
         .mode-btn { width: 100%; max-width: 300px; padding: 20px; border-radius: 12px; border: 2px solid var(--accent); background: #111; color: white; cursor: pointer; text-align: center; }
-        #manual-entry { display: none; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; margin-top: 10px; }
-        #room-input { padding: 15px; border-radius: 8px; border: 1px solid var(--accent); background: #000; color: var(--accent); text-align: center; font-size: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 5px; }
+        #manual-entry { display: none; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; }
+        #room-input { padding: 15px; border-radius: 8px; border: 1px solid var(--accent); background: #000; color: var(--accent); text-align: center; font-size: 20px; font-weight: bold; text-transform: uppercase; }
 
         #main-wrapper { display: none; width: 100vw; height: 100vh; position: relative; }
         #forest { flex: 1; position: relative; overflow: hidden; background: #000; }
-        
-        /* Фон и ветер */
         #bg-container { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
         #bg-media { transition: transform 0.1s linear; will-change: transform; pointer-events: none; }
         .wind-effect { animation: wind var(--ws) ease-in-out infinite; }
         @keyframes wind { 0%, 100% { transform: skewX(0deg); } 50% { transform: skewX(var(--wp)); } }
         
         #hero-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
-        .hero { position: absolute; will-change: transform; transform-origin: center bottom; bottom: 0; filter: saturate(1.6) contrast(1.1) drop-shadow(0 10px 15px rgba(0,0,0,0.5)); transition: opacity 0.3s; }
+        .hero { position: absolute; will-change: transform; transform-origin: center bottom; bottom: 0; filter: saturate(1.6) contrast(1.1); transition: opacity 0.3s; }
         .hero.hidden { opacity: 0; }
 
-        /* Боковая панель */
         #side-panel { width: 340px; background: var(--panel); border-left: 1px solid #333; transition: 0.4s; z-index: 100; position: relative; display: flex; flex-direction: column; }
         #side-panel.hidden { margin-right: -340px; }
         #toggle-panel { position: absolute; left: -45px; top: 20px; width: 45px; height: 45px; background: var(--panel); border: 1px solid #333; border-radius: 10px 0 0 10px; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
@@ -41,13 +37,13 @@
         #room-info { font-size: 14px; text-align: center; padding: 10px; background: #000; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--accent); }
         #ai-status { padding: 8px; border-radius: 6px; font-size: 11px; text-align: center; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; }
         .status-ok { color: var(--accent) !important; border-color: var(--accent) !important; }
+        .status-err { color: #ff4444 !important; border-color: #ff4444 !important; }
 
         button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: #2a2d26; color: white; font-size: 11px; margin-top: 5px; }
         .btn-ai { background: var(--accent) !important; color: #000 !important; }
         input[type="range"] { width: 100%; accent-color: var(--accent); }
         label { font-size: 9px; color: #888; display: block; margin-top: 8px; }
 
-        /* Список героев */
         .h-item { background: #000; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #444; }
         .h-controls { display: flex; align-items: center; gap: 8px; }
         .btn-vis { width: 34px; height: 34px; padding: 0; background: #333; font-size: 16px; border-radius: 6px; }
@@ -66,22 +62,16 @@
 </div>
 
 <div id="main-wrapper">
-    <div id="forest">
-        <div id="bg-container" class="wind-effect">
-            <img id="bg-media" src="https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1920">
-        </div>
-        <div id="hero-layer"></div>
-    </div>
-
+    <div id="forest"><div id="bg-container" class="wind-effect"><img id="bg-media" src="https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1920"></div><div id="hero-layer"></div></div>
     <div id="side-panel">
         <div id="toggle-panel" onclick="$('side-panel').classList.toggle('hidden')">◀</div>
         <div class="content">
             <div id="room-info">ROOM: <span id="room-id-display" style="color:var(--accent)">...</span></div>
-            <div id="ai-status">ГОТОВ К РАБОТЕ</div>
+            <div id="ai-status">ОЖИДАНИЕ...</div>
 
             <div class="group">
                 <div class="group-title">1. ГЕРОЙ (ИИ)</div>
-                <input type="password" id="api-key" placeholder="Remove.bg Key" style="width:100%; background:black; color:white; padding:8px; border:1px solid #444; margin-bottom:5px;">
+                <input type="password" id="api-key" oninput="saveKey(this.value)" placeholder="Remove.bg Key" style="width:100%; background:black; color:white; padding:8px; border:1px solid #444; margin-bottom:5px;">
                 <video id="feed" style="width:100%; border-radius:8px; background:#000;" autoplay playsinline></video>
                 <button class="btn-ai" onclick="takePhoto()">✂️ ВЫРЕЗАТЬ ФОН</button>
                 <button onclick="$('h-pc').click()">📂 ЗАГРУЗИТЬ С ПК</button>
@@ -89,28 +79,20 @@
             </div>
 
             <div class="group">
-                <div class="group-title">2. УПРАВЛЕНИЕ ФОНОМ</div>
-                <label>МАСШТАБ ФОНА</label>
-                <input type="range" min="50" max="300" value="100" oninput="control('bg-z', this.value)">
-                <label>СМЕЩЕНИЕ X / Y</label>
-                <div style="display:flex; gap:5px;">
-                    <input type="range" min="-1000" max="1000" value="0" oninput="control('bg-x', this.value)">
-                    <input type="range" min="-1000" max="1000" value="0" oninput="control('bg-y', this.value)">
-                </div>
-                <label>СИЛА ВЕТРА (ПОКАЧИВАНИЕ)</label>
-                <input type="range" min="0" max="15" value="2" oninput="control('wind', this.value)">
-                <button onclick="$('bg-file').click()" style="margin-top:10px;">🖼️ НОВЫЙ ФОН</button>
+                <div class="group-title">2. ФОН</div>
+                <label>МАСШТАБ</label><input type="range" min="50" max="300" value="100" oninput="control('bg-z', this.value)">
+                <label>X / Y</label>
+                <div style="display:flex; gap:5px;"><input type="range" min="-1000" max="1000" value="0" oninput="control('bg-x', this.value)"><input type="range" min="-1000" max="1000" value="0" oninput="control('bg-y', this.value)"></div>
+                <label>ВЕТЕР</label><input type="range" min="0" max="15" value="2" oninput="control('wind', this.value)">
+                <button onclick="$('bg-file').click()" style="margin-top:10px;">🖼️ СМЕНИТЬ ФОН</button>
             </div>
 
             <div class="group">
                 <div class="group-title">3. ЗВУК</div>
-                <button onclick="$('snd-file').click()" style="background:#1a4a1a">🎵 ЗАГРУЗИТЬ ТРЕК</button>
-                <label>ГРОМКОСТЬ</label>
-                <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="control('vol', this.value)">
-                <input type="file" id="bg-file" hidden onchange="uploadBg(this)">
-                <input type="file" id="snd-file" hidden accept="audio/*" onchange="uploadSnd(this)">
+                <button onclick="$('snd-file').click()" style="background:#1a4a1a">🎵 ТРЕК</button>
+                <label>ГРОМКОСТЬ</label><input type="range" min="0" max="1" step="0.1" value="0.5" oninput="control('vol', this.value)">
+                <input type="file" id="bg-file" hidden onchange="uploadBg(this)"><input type="file" id="snd-file" hidden accept="audio/*" onchange="uploadSnd(this)">
             </div>
-
             <div id="hero-list"></div>
         </div>
     </div>
@@ -118,34 +100,30 @@
 
 <script>
     const $ = id => document.getElementById(id);
-    const PREFIX = "F1_STB_";
+    const PREFIX = "L1_STABLE_";
     let peer, conn, role, heroes = [], bgAudio = null, bgS = {z:1, x:0, y:0};
     let roomID = "";
 
-    function showManualInput() {
-        $('manual-entry').style.display = 'flex';
-        document.querySelectorAll('.mode-btn').forEach(b => b.style.display = 'none');
-    }
+    // Загрузка ключа из памяти [cite: 2025-12-30]
+    window.onload = () => { if(localStorage.getItem('rbg_key')) $('api-key').value = localStorage.getItem('rbg_key'); };
+    function saveKey(v) { localStorage.setItem('rbg_key', v); }
+
+    function showManualInput() { $('manual-entry').style.display = 'flex'; document.querySelectorAll('.mode-btn').forEach(b => b.style.display = 'none'); }
 
     function startMode(m) {
         role = m;
         if(role === 'phone') {
             roomID = $('room-input').value.toUpperCase();
             if(!roomID) return alert("Введите код!");
-            $('selector').style.display = 'none';
-            $('main-wrapper').style.display = 'flex';
-            $('forest').style.display = 'none';
-            $('side-panel').style.width = '100%';
-            $('side-panel').classList.remove('hidden');
-            $('toggle-panel').style.display = 'none';
+            $('selector').style.display = 'none'; $('main-wrapper').style.display = 'flex';
+            $('forest').style.display = 'none'; $('side-panel').style.width = '100%';
+            $('side-panel').classList.remove('hidden'); $('toggle-panel').style.display = 'none';
             initPeer(null, roomID);
         } else {
-            $('selector').style.display = 'none';
-            $('main-wrapper').style.display = 'flex';
+            $('selector').style.display = 'none'; $('main-wrapper').style.display = 'flex';
             roomID = Math.random().toString(36).substring(2, 6).toUpperCase();
             $('room-id-display').innerText = roomID;
-            initPeer(PREFIX + roomID, null);
-            initCamera();
+            initPeer(PREFIX + roomID, null); initCamera();
         }
         requestAnimationFrame(update);
     }
@@ -153,25 +131,23 @@
     function initPeer(id, target) {
         peer = new Peer(id);
         peer.on('open', () => {
-            if(role==='screen') setStatus("ЭКРАН ГОТОВ", "ok");
+            if(role==='screen') setStatus("ЭКРАН ГОТОВ: " + roomID, "ok");
             if(target) tryConnect(PREFIX + target);
         });
-        peer.on('connection', c => {
-            conn = c;
-            setupListeners();
-            setStatus("ПОДКЛЮЧЕНО", "ok");
-        });
+        peer.on('connection', c => { conn = c; setupListeners(); setStatus("ПУЛЬТ ПОДКЛЮЧЕН", "ok"); });
+        peer.on('error', e => setStatus("ОШИБКА: " + e.type, "err"));
     }
 
     function tryConnect(tid) {
-        setStatus("ПОИСК...");
+        setStatus("ПОИСК ЭКРАНА...");
         conn = peer.connect(tid, { reliable: true });
         setupListeners();
     }
 
     function setupListeners() {
-        conn.on('open', () => { setStatus("СВЯЗЬ ОК", "ok"); $('room-id-display').innerText = roomID; });
+        conn.on('open', () => { setStatus("СВЯЗЬ УСТАНОВЛЕНА", "ok"); $('room-id-display').innerText = roomID; });
         conn.on('data', d => handleData(d));
+        conn.on('close', () => { setStatus("СВЯЗЬ ПОТЕРЯНА", "err"); if(role==='phone') setTimeout(()=>tryConnect(PREFIX+roomID), 3000); });
     }
 
     function handleData(d) {
@@ -181,7 +157,6 @@
             if(d.name === 'bg-z') bgS.z = d.val/100;
             if(d.name === 'bg-x') bgS.x = d.val;
             if(d.name === 'bg-y') bgS.y = d.val;
-            
             const h = heroes.find(x => x.id == d.id);
             if(h) {
                 if(d.name === 'h-sz') h.el.style.width = d.val + "px";
@@ -205,31 +180,18 @@
         if($('h-'+id)) return;
         const img = document.createElement('img');
         img.src = src; img.className = 'hero'; img.id = 'h-' + id;
-        img.style.width = "200px";
-        $('hero-layer').appendChild(img);
-        
+        img.style.width = "200px"; $('hero-layer').appendChild(img);
         heroes.push({ id, el: img, x: -300, speed: 2, angle: Math.random()*10, vis: true });
-
         const item = document.createElement('div');
         item.className = 'h-item'; item.id = 'ui-'+id;
-        item.innerHTML = `
-            <div class="h-controls">
-                <img src="${src}" style="width:35px;height:35px;object-fit:contain;background:#222;border-radius:4px;filter:saturate(1.6);">
-                <div style="flex:1">
-                    <input type="range" min="30" max="800" value="200" oninput="control('h-sz', this.value, ${id})">
-                    <input type="range" min="0" max="10" step="0.5" value="2" oninput="control('h-sp', this.value, ${id})">
-                </div>
-                <button class="btn-vis" id="vis-${id}" onclick="control('h-vis', !heroes.find(x=>x.id==${id}).vis, ${id})">👁️</button>
-                <button class="btn-vis" style="background:#500" onclick="control('h-del', 0, ${id})">×</button>
-            </div>
-        `;
+        item.innerHTML = `<div class="h-controls"><img src="${src}" style="width:35px;height:35px;object-fit:contain;background:#222;border-radius:4px;filter:saturate(1.6);"><div style="flex:1"><input type="range" min="30" max="800" value="200" oninput="control('h-sz', this.value, ${id})"><input type="range" min="0" max="10" step="0.5" value="2" oninput="control('h-sp', this.value, ${id})"></div><button class="btn-vis" id="vis-${id}" onclick="control('h-vis', !heroes.find(x=>x.id==${id}).vis, ${id})">👁️</button><button class="btn-vis" style="background:#500" onclick="control('h-del', 0, ${id})">×</button></div>`;
         $('hero-list').appendChild(item);
         if(isNew && conn && conn.open) conn.send({type:'hero', src, id, isNew: false});
     }
 
     async function callAI(blob) {
         const key = $('api-key').value;
-        if(!key) return alert("Нужен API Ключ Remove.bg");
+        if(!key) return alert("Введите API Ключ!");
         setStatus("🚀 ИИ ОБРАБОТКА...");
         const fd = new FormData(); fd.append('image_file', blob);
         try {
@@ -237,32 +199,23 @@
             if(res.ok) {
                 const b = await res.blob();
                 const r = new FileReader();
-                r.onload = () => { const id = Date.now(); addHero(r.result, id, true); setStatus("✅ УСПЕХ", "ok"); };
+                r.onload = () => { const id = Date.now(); addHero(r.result, id, true); setStatus("✅ ГОТОВО", "ok"); };
                 r.readAsDataURL(b);
-            }
-        } catch(e) { setStatus("❌ ОШИБКА"); }
+            } else { setStatus("❌ ОШИБКА ИИ", "err"); }
+        } catch(e) { setStatus("❌ СБОЙ СЕТИ", "err"); }
     }
 
-    function deleteHeroLocal(id) {
-        const idx = heroes.findIndex(x => x.id == id);
-        if(idx > -1) { heroes[idx].el.remove(); heroes.splice(idx, 1); if($('ui-'+id)) $('ui-'+id).remove(); }
-    }
+    function deleteHeroLocal(id) { const idx = heroes.findIndex(x => x.id == id); if(idx > -1) { heroes[idx].el.remove(); heroes.splice(idx, 1); if($('ui-'+id)) $('ui-'+id).remove(); } }
     function uploadSnd(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if(conn && conn.open) conn.send({type:'snd', src:e.target.result}); playSnd(e.target.result); }; r.readAsDataURL(i.files[0]); } }
     function playSnd(s) { if(bgAudio) bgAudio.pause(); bgAudio = new Audio(s); bgAudio.loop = true; bgAudio.play(); }
     function uploadBg(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if(conn && conn.open) conn.send({type:'bg', src:e.target.result}); $('bg-media').src = e.target.result; }; r.readAsDataURL(i.files[0]); } }
     function takePhoto() { const c = document.createElement('canvas'); const v = $('feed'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob(b => callAI(b)); }
     function processFile(f) { if(f) callAI(f); }
     async function initCamera() { try { const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); $('feed').srcObject = s; } catch(e){}}
-    function setStatus(t, s) { $('ai-status').innerText = t; $('ai-status').className = s === 'ok' ? 'status-ok' : ''; }
-
+    function setStatus(t, s) { $('ai-status').innerText = t; $('ai-status').className = s === 'ok' ? 'status-ok' : (s === 'err' ? 'status-err' : ''); }
     function update() {
         const w = $('forest').clientWidth;
-        heroes.forEach(h => {
-            if(!h.vis) return;
-            h.x += h.speed; h.angle += 0.05;
-            if(h.x > w + 400) h.x = -400;
-            h.el.style.transform = `translateX(${h.x}px) translateY(${Math.sin(h.angle)*4}px)`;
-        });
+        heroes.forEach(h => { if(!h.vis) return; h.x += h.speed; h.angle += 0.05; if(h.x > w + 400) h.x = -400; h.el.style.transform = `translateX(${h.x}px) translateY(${Math.sin(h.angle)*4}px)`; });
         requestAnimationFrame(update);
     }
 </script>
