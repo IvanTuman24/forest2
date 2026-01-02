@@ -3,76 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ЛЕС 2.0 - FULL CONTROL</title>
+    <title>ЛЕС 2.0 - STABLE CONNECT</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --accent: #00ffcc; --panel: #111411; --ws: 5s; --wp: 2deg; }
+        :root { --accent: #00ffcc; --panel: #111411; --ws: 5s; --wp: 2deg; --day-filter: none; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: #eee; }
         
         #selector { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
         .mode-btn { width: 280px; padding: 25px; border-radius: 15px; border: 2px solid var(--accent); background: #111; color: white; cursor: pointer; text-align: center; }
 
-        #main-wrapper { display: flex; width: 100vw; height: 100vh; position: relative; }
+        #main-wrapper { display: flex; width: 100vw; height: 100vh; position: relative; filter: var(--day-filter); }
         #forest { flex: 1; position: relative; overflow: hidden; background: #000; }
         
         #bg-container { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-        #bg-media { transition: transform 0.1s linear; will-change: transform; }
+        #bg-media { transition: transform 0.1s linear; will-change: transform; pointer-events: none; }
         .wind-effect { animation: wind var(--ws) ease-in-out infinite; }
         @keyframes wind { 0%, 100% { transform: skewX(0deg); } 50% { transform: skewX(var(--wp)); } }
         
-        #hero-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-        .hero { position: absolute; will-change: transform; transform-origin: center bottom; bottom: 0; filter: saturate(1.4) contrast(1.1); }
-        .hero.hidden { display: none; }
+        #hero-layer-far, #hero-layer-near { position: absolute; inset: 0; pointer-events: none; }
+        #hero-layer-far { z-index: 5; }
+        #hero-layer-near { z-index: 15; }
+        
+        #mist-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; background: linear-gradient(0deg, rgba(255,255,255,0.1) 0%, transparent 60%); opacity: 0; transition: 0.5s; animation: mistMove 12s ease-in-out infinite; }
+        @keyframes mistMove { 0%, 100% { transform: translateX(-3%) scale(1.1); } 50% { transform: translateX(3%) scale(1); } }
+
+        .hero { position: absolute; will-change: transform; transform-origin: center bottom; bottom: 0; filter: saturate(1.4) contrast(1.1); transition: opacity 0.3s; }
+        .hero.hidden { opacity: 0; }
 
         #side-panel { width: 340px; background: var(--panel); border-left: 1px solid #333; transition: 0.4s; z-index: 100; position: relative; display: flex; flex-direction: column; }
         #side-panel.hidden { margin-right: -340px; }
-        #toggle-panel { position: absolute; left: -45px; top: 20px; width: 45px; height: 45px; background: var(--panel); border: 1px solid #333; border-radius: 10px 0 0 10px; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #toggle-panel { position: absolute; left: -45px; top: 20px; width: 45px; height: 45px; background: var(--panel); border: 1px solid #333; border-radius: 10px 0 0 10px; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 
-        .content { padding: 15px; overflow-y: auto; flex: 1; }
+        .content { padding: 15px; overflow-y: auto; flex: 1; scrollbar-width: thin; }
         .group { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #333; }
-        .group-title { font-size: 10px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: bold; }
+        .group-title { font-size: 10px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: bold; letter-spacing: 1px; }
 
-        #room-info { font-size: 14px; text-align: center; padding: 10px; background: #000; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--accent); }
-        #ai-status { padding: 8px; border-radius: 6px; font-size: 11px; text-align: center; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; }
-        .status-ok { color: var(--accent); border-color: var(--accent); }
+        #room-info { font-size: 14px; text-align: center; padding: 10px; background: #000; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--accent); box-shadow: inset 0 0 10px rgba(0,255,204,0.1); }
+        #ai-status { padding: 8px; border-radius: 6px; font-size: 11px; text-align: center; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; color: #888; }
+        .status-ok { color: var(--accent) !important; border-color: var(--accent) !important; }
 
-        button { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: #2a2d26; color: white; font-size: 11px; margin-top: 5px; }
+        button { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: #2a2d26; color: white; font-size: 11px; margin-top: 5px; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
         .btn-ai { background: var(--accent) !important; color: #000 !important; }
-        input[type="range"] { width: 100%; accent-color: var(--accent); }
-        label { font-size: 9px; color: #888; display: block; margin-top: 5px; }
+        input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+        label { font-size: 9px; color: #888; display: block; margin-top: 8px; text-transform: uppercase; }
 
         .h-item { background: #000; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #444; }
-        .h-controls { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
-        .btn-vis { width: 30px; height: 30px; padding: 0; background: #333; }
-        #qr-box { position: absolute; top: 20px; left: 20px; background: white; padding: 10px; border-radius: 10px; z-index: 1000; display: none; text-align: center; color: #000; }
+        .h-controls { display: flex; align-items: center; gap: 8px; }
+        .btn-vis { width: 34px; height: 34px; padding: 0; background: #333; font-size: 16px; }
+        #qr-box { position: absolute; top: 20px; left: 20px; background: white; padding: 15px; border-radius: 15px; z-index: 1000; display: none; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
 
 <div id="selector">
-    <div class="mode-btn" onclick="startMode('screen')"><h2>🖥️ ЭКРАН</h2></div>
-    <div class="mode-btn" onclick="startMode('phone')"><h2>📱 ПУЛЬТ</h2></div>
+    <h1 style="color: var(--accent); margin-bottom: 5px;">ЛЕС 2.0</h1>
+    <p style="color: #666; margin-bottom: 20px; font-size: 12px;">СИСТЕМА СТАБИЛЬНОЙ СВЯЗИ</p>
+    <div class="mode-btn" onclick="startMode('screen')"><h2>🖥️ ЭКРАН</h2><p style="font-size:10px; margin-top:5px; opacity:0.7;">Создать новую комнату</p></div>
+    <div class="mode-btn" onclick="startMode('phone')"><h2>📱 ПУЛЬТ</h2><p style="font-size:10px; margin-top:5px; opacity:0.7;">Подключиться к экрану</p></div>
 </div>
 
 <div id="main-wrapper">
     <div id="forest">
-        <div id="qr-box"><div id="qr-img"></div><p style="font-size:10px;font-weight:bold">СКАН К ПОДКЛЮЧЕНИЮ</p></div>
+        <div id="qr-box"><div id="qr-img"></div><p style="color:#000; font-size:10px; font-weight:bold; margin-top:10px;">СКАН ДЛЯ ПУЛЬТА</p></div>
         <div id="bg-container" class="wind-effect">
             <img id="bg-media" src="https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1920">
         </div>
-        <div id="hero-layer"></div>
+        <div id="hero-layer-far"></div>
+        <div id="mist-layer"></div>
+        <div id="hero-layer-near"></div>
     </div>
 
     <div id="side-panel">
         <div id="toggle-panel" onclick="$('side-panel').classList.toggle('hidden')">◀</div>
         <div class="content">
-            <div id="room-info">ROOM: <span id="room-id-display" style="color:var(--accent)">...</span></div>
-            <div id="ai-status">СИСТЕМА ГОТОВА</div>
+            <div id="room-info">ROOM: <span id="room-id-display" style="color:var(--accent); font-weight:bold;">...</span></div>
+            <div id="ai-status">ОЖИДАНИЕ ИНИЦИАЛИЗАЦИИ...</div>
 
             <div class="group">
-                <div class="group-title">1. СОЗДАНИЕ ГЕРОЯ</div>
-                <input type="password" id="api-key" placeholder="Remove.bg Key" style="width:100%; background:black; color:white; padding:8px; border:1px solid #444; margin-bottom:5px;">
+                <div class="group-title">1. ГЕРОЙ</div>
+                <input type="password" id="api-key" placeholder="Remove.bg Key" style="width:100%; background:black; color:white; padding:8px; border:1px solid #444; border-radius:4px; margin-bottom:5px;">
                 <video id="feed" style="width:100%; border-radius:8px; background:#000;" autoplay playsinline></video>
                 <button class="btn-ai" onclick="takePhoto()">✂️ ВЫРЕЗАТЬ С КАМЕРЫ</button>
                 <button onclick="$('h-pc').click()">📂 ЗАГРУЗИТЬ С ПК</button>
@@ -80,26 +91,22 @@
             </div>
 
             <div class="group">
-                <div class="group-title">2. ОКРУЖЕНИЕ</div>
-                <button onclick="$('bg-file').click()">🖼️ СМЕНИТЬ ФОН</button>
-                <button onclick="$('snd-file').click()" style="background:#1a4a1a">🎵 ЗВУК</button>
-                <label>ГРОМКОСТЬ ЗВУКА</label>
-                <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="control('vol', this.value)">
-                
-                <label>МАСШТАБ ФОНА</label>
-                <input type="range" min="50" max="300" value="100" oninput="control('bg-z', this.value)">
-                <div style="display:flex; gap:5px;">
-                    <div style="flex:1"><label>СМЕЩЕНИЕ X</label><input type="range" min="-500" max="500" value="0" oninput="control('bg-x', this.value)"></div>
-                    <div style="flex:1"><label>СМЕЩЕНИЕ Y</label><input type="range" min="-500" max="500" value="0" oninput="control('bg-y', this.value)"></div>
-                </div>
-                <label>СИЛА ПОКАЧИВАНИЯ (ВЕТЕР)</label>
+                <div class="group-title">2. АТМОСФЕРА</div>
+                <label>ВРЕМЯ СУТОК</label>
+                <input type="range" min="0" max="100" value="0" oninput="control('time', this.value)">
+                <label>ПЛОТНОСТЬ ТУМАНА</label>
+                <input type="range" min="0" max="100" value="0" oninput="control('mist', this.value)">
+                <label>СИЛА ВЕТРА</label>
                 <input type="range" min="0" max="15" value="2" oninput="control('wind', this.value)">
-
+                <button onclick="$('bg-file').click()" style="margin-top:10px;">🖼️ СМЕНИТЬ ФОН</button>
+                <button onclick="$('snd-file').click()" style="background:#1a4a1a">🎵 ЗВУК</button>
+                <label>ГРОМКОСТЬ</label>
+                <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="control('vol', this.value)">
                 <input type="file" id="bg-file" hidden onchange="uploadBg(this)">
                 <input type="file" id="snd-file" hidden accept="audio/*" onchange="uploadSnd(this)">
             </div>
 
-            <div class="group" id="qr-group"><button onclick="showQR()" style="background:#4b0082">📲 ПОДКЛЮЧИТЬ ПУЛЬТ</button></div>
+            <div class="group" id="qr-group"><button onclick="showQR()" style="background:#4b0082">📲 ПОКАЗАТЬ QR</button></div>
             <div id="hero-list"></div>
         </div>
     </div>
@@ -107,56 +114,84 @@
 
 <script>
     const $ = id => document.getElementById(id);
-    let peer, conn, role, heroes = [], bgAudio = null, bgS = {z:1, x:0, y:0};
+    const PREFIX = "FOREST_STABLE_";
+    let peer, conn, role, heroes = [], bgAudio = null;
     let roomID = "";
 
     function startMode(m) {
         role = m;
         $('selector').style.display = 'none';
         const urlID = new URLSearchParams(window.location.search).get('join');
+        
         if(role === 'phone') {
             $('forest').style.display = 'none';
             $('side-panel').style.width = '100%';
             $('side-panel').classList.remove('hidden');
             $('toggle-panel').style.display = 'none';
             $('qr-group').style.display = 'none';
-            roomID = urlID || prompt("Введите ID комнаты:");
+            roomID = urlID || prompt("Введите 4-значный код комнаты:");
+            if(!roomID) { location.reload(); return; }
+            roomID = roomID.toUpperCase();
             initPeer(null, roomID);
         } else {
             roomID = Math.random().toString(36).substring(2, 6).toUpperCase();
             $('room-id-display').innerText = roomID;
-            initPeer("F2-" + roomID, null);
+            initPeer(PREFIX + roomID, null);
             initCamera();
         }
         requestAnimationFrame(update);
     }
 
     function initPeer(id, target) {
-        peer = new Peer(id);
-        peer.on('open', () => {
+        peer = new Peer(id, { debug: 1 });
+        
+        peer.on('open', (id) => {
+            console.log('My ID: ' + id);
             if(role==='screen') setStatus("ЭКРАН ГОТОВ: " + roomID, "ok");
-            if(target) connect("F2-" + target);
+            if(target) tryConnect(PREFIX + target);
         });
+
         peer.on('connection', c => {
-            conn = c; setStatus("ПУЛЬТ ПОДКЛЮЧЕН", "ok");
-            conn.on('data', d => handleData(d));
+            conn = c;
+            setupConnListeners();
+            setStatus("ПУЛЬТ ПОДКЛЮЧЕН", "ok");
+        });
+
+        peer.on('error', err => {
+            console.error('Peer Error:', err.type);
+            if(err.type === 'peer-dotnet-found') setStatus("ОШИБКА: Код занят");
+            else setStatus("ОШИБКА СЕТИ");
         });
     }
 
-    function connect(id) {
-        conn = peer.connect(id);
-        conn.on('open', () => { setStatus("СВЯЗЬ ОК", "ok"); $('room-id-display').innerText = roomID; });
+    function tryConnect(targetID) {
+        setStatus("ПОДКЛЮЧЕНИЕ...");
+        conn = peer.connect(targetID, { reliable: true });
+        setupConnListeners();
+    }
+
+    function setupConnListeners() {
+        conn.on('open', () => {
+            setStatus("СВЯЗЬ УСТАНОВЛЕНА", "ok");
+            $('room-id-display').innerText = roomID;
+        });
         conn.on('data', d => handleData(d));
+        conn.on('close', () => {
+            setStatus("СВЯЗЬ ПОТЕРЯНА...");
+            if(role === 'phone') setTimeout(() => tryConnect(PREFIX + roomID), 3000);
+        });
     }
 
     function handleData(d) {
         if(d.type === 'cmd') {
-            if(d.name === 'bg-z') bgS.z = d.val/100;
-            if(d.name === 'bg-x') bgS.x = d.val;
-            if(d.name === 'bg-y') bgS.y = d.val;
             if(d.name === 'wind') document.documentElement.style.setProperty('--wp', d.val + 'deg');
             if(d.name === 'vol' && bgAudio) bgAudio.volume = d.val;
-            
+            if(d.name === 'mist') $('mist-layer').style.opacity = d.val / 100;
+            if(d.name === 'time') {
+                const v = d.val;
+                const filter = `hue-rotate(${v*0.4}deg) brightness(${1 - v/250}) sepia(${v/200})`;
+                document.documentElement.style.setProperty('--day-filter', filter);
+            }
             const h = heroes.find(x => x.id == d.id);
             if(h) {
                 if(d.name === 'h-sz') h.el.style.width = d.val + "px";
@@ -164,7 +199,6 @@
                 if(d.name === 'h-vis') { h.vis = d.val; h.el.classList.toggle('hidden', !h.vis); if($('vis-'+d.id)) $('vis-'+d.id).innerText = h.vis ? '👁️' : '🌑'; }
                 if(d.name === 'h-del') deleteHeroLocal(d.id);
             }
-            $('bg-media').style.transform = `translate(${bgS.x}px, ${bgS.y}px) scale(${bgS.z})`;
         }
         if(d.type === 'hero') addHero(d.src, d.id, d.isNew);
         if(d.type === 'bg') $('bg-media').src = d.src;
@@ -172,7 +206,7 @@
     }
 
     function control(name, val, id = null) {
-        if(conn) conn.send({type:'cmd', name, val, id});
+        if(conn && conn.open) conn.send({type:'cmd', name, val, id});
         handleData({type:'cmd', name, val, id});
     }
 
@@ -183,15 +217,16 @@
         const isFar = heroes.length % 2 === 0;
         img.style.bottom = isFar ? "50%" : "10%";
         img.style.width = isFar ? "150px" : "250px";
-        img.style.zIndex = isFar ? 5 : 20;
-        $('hero-layer').appendChild(img);
-        heroes.push({ id, el: img, x: -300, speed: 2, angle: Math.random()*10, vis: true });
+        if(isFar) $('hero-layer-far').appendChild(img);
+        else $('hero-layer-near').appendChild(img);
+
+        heroes.push({ id, el: img, x: -300, speed: 2, angle: Math.random()*10, vis: true, isFar });
 
         const item = document.createElement('div');
         item.className = 'h-item'; item.id = 'ui-'+id;
         item.innerHTML = `
             <div class="h-controls">
-                <img src="${src}" style="width:40px;height:40px;object-fit:contain;background:#222;border-radius:4px;filter:saturate(1.4)">
+                <img src="${src}" style="width:30px;height:30px;object-fit:contain;background:#222;border-radius:4px;">
                 <div style="flex:1">
                     <input type="range" min="30" max="600" value="${isFar?150:250}" oninput="control('h-sz', this.value, ${id})">
                     <input type="range" min="0" max="10" step="0.5" value="2" oninput="control('h-sp', this.value, ${id})">
@@ -201,34 +236,32 @@
             </div>
         `;
         $('hero-list').appendChild(item);
-        
-        // Если это новый герой (создан на этом устройстве), отправляем его другому
-        if(isNew && conn) conn.send({type:'hero', src, id, isNew: false});
+        if(isNew && conn && conn.open) conn.send({type:'hero', src, id, isNew: false});
     }
 
     async function callAI(blob) {
         const key = $('api-key').value;
-        if(!key) { alert("Введите API КЛЮЧ!"); return; }
-        setStatus("🚀 ИИ ОБРАБОТКА...");
+        if(!key) { alert("ВСТАВЬТЕ API KEY!"); return; }
+        setStatus("🚀 ИИ: ОБРАБОТКА...");
         const fd = new FormData(); fd.append('image_file', blob);
         try {
             const res = await fetch('https://api.remove.bg/v1.0/removebg', { method:'POST', headers:{'X-Api-Key':key}, body:fd });
             if(res.ok) {
                 const b = await res.blob();
                 const reader = new FileReader();
-                reader.onload = () => { const id = Date.now(); addHero(reader.result, id, true); setStatus("✅ ГЕРОЙ ДОБАВЛЕН", "ok"); };
+                reader.onload = () => { const id = Date.now(); addHero(reader.result, id, true); setStatus("✅ ГОТОВО", "ok"); };
                 reader.readAsDataURL(b);
-            }
-        } catch(e) { setStatus("❌ ОШИБКА ИИ"); }
+            } else { setStatus("❌ ИИ: ОШИБКА КЛЮЧА"); }
+        } catch(e) { setStatus("❌ ИИ: СБОЙ СЕТИ"); }
     }
 
     function deleteHeroLocal(id) {
         const idx = heroes.findIndex(x => x.id == id);
         if(idx > -1) { heroes[idx].el.remove(); heroes.splice(idx, 1); if($('ui-'+id)) $('ui-'+id).remove(); }
     }
-    function uploadSnd(input) { if(input.files[0]) { const r = new FileReader(); r.onload = e => { if(conn) conn.send({type:'snd', src:e.target.result}); playSnd(e.target.result); }; r.readAsDataURL(input.files[0]); } }
+    function uploadSnd(input) { if(input.files[0]) { const r = new FileReader(); r.onload = e => { if(conn && conn.open) conn.send({type:'snd', src:e.target.result}); playSnd(e.target.result); }; r.readAsDataURL(input.files[0]); } }
     function playSnd(src) { if(bgAudio) bgAudio.pause(); bgAudio = new Audio(src); bgAudio.loop = true; bgAudio.play(); }
-    function uploadBg(input) { if(input.files[0]) { const r = new FileReader(); r.onload = e => { if(conn) conn.send({type:'bg', src:e.target.result}); $('bg-media').src = e.target.result; }; r.readAsDataURL(input.files[0]); } }
+    function uploadBg(input) { if(input.files[0]) { const r = new FileReader(); r.onload = e => { if(conn && conn.open) conn.send({type:'bg', src:e.target.result}); $('bg-media').src = e.target.result; }; r.readAsDataURL(input.files[0]); } }
     function takePhoto() { const c = document.createElement('canvas'); const v = $('feed'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob(b => callAI(b)); }
     function processFile(f) { if(f) callAI(f); }
     async function initCamera() { try { const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); $('feed').srcObject = s; } catch(e){}}
