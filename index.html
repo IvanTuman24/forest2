@@ -3,37 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ЛЕС 2.0 - MANUAL CONNECT</title>
+    <title>ЛЕС 1 - COMPLETE</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --accent: #00ffcc; --panel: #111411; --ws: 5s; --wp: 2deg; --day-filter: none; }
+        :root { --accent: #00ffcc; --panel: #111411; --ws: 5s; --wp: 2deg; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: #eee; }
         
-        /* Стили селектора и ввода */
+        /* Начальный экран */
         #selector { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px; }
         .mode-btn { width: 100%; max-width: 300px; padding: 20px; border-radius: 12px; border: 2px solid var(--accent); background: #111; color: white; cursor: pointer; text-align: center; }
         #manual-entry { display: none; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; margin-top: 10px; }
         #room-input { padding: 15px; border-radius: 8px; border: 1px solid var(--accent); background: #000; color: var(--accent); text-align: center; font-size: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 5px; }
 
-        #main-wrapper { display: none; width: 100vw; height: 100vh; position: relative; filter: var(--day-filter); }
+        #main-wrapper { display: none; width: 100vw; height: 100vh; position: relative; }
         #forest { flex: 1; position: relative; overflow: hidden; background: #000; }
         
+        /* Фон и ветер */
         #bg-container { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
         #bg-media { transition: transform 0.1s linear; will-change: transform; pointer-events: none; }
         .wind-effect { animation: wind var(--ws) ease-in-out infinite; }
         @keyframes wind { 0%, 100% { transform: skewX(0deg); } 50% { transform: skewX(var(--wp)); } }
         
-        #hero-layer-far, #hero-layer-near { position: absolute; inset: 0; pointer-events: none; }
-        #hero-layer-far { z-index: 5; }
-        #hero-layer-near { z-index: 15; }
-        
-        #mist-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; background: linear-gradient(0deg, rgba(255,255,255,0.1) 0%, transparent 60%); opacity: 0; transition: 0.5s; animation: mistMove 12s ease-in-out infinite; }
-        @keyframes mistMove { 0%, 100% { transform: translateX(-3%) scale(1.1); } 50% { transform: translateX(3%) scale(1); } }
-
-        .hero { position: absolute; will-change: transform; transform-origin: center bottom; bottom: 0; filter: saturate(1.4) contrast(1.1); transition: opacity 0.3s; }
+        #hero-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+        .hero { position: absolute; will-change: transform; transform-origin: center bottom; bottom: 0; filter: saturate(1.6) contrast(1.1) drop-shadow(0 10px 15px rgba(0,0,0,0.5)); transition: opacity 0.3s; }
         .hero.hidden { opacity: 0; }
 
+        /* Боковая панель */
         #side-panel { width: 340px; background: var(--panel); border-left: 1px solid #333; transition: 0.4s; z-index: 100; position: relative; display: flex; flex-direction: column; }
         #side-panel.hidden { margin-right: -340px; }
         #toggle-panel { position: absolute; left: -45px; top: 20px; width: 45px; height: 45px; background: var(--panel); border: 1px solid #333; border-radius: 10px 0 0 10px; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
@@ -43,78 +39,78 @@
         .group-title { font-size: 10px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: bold; }
 
         #room-info { font-size: 14px; text-align: center; padding: 10px; background: #000; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--accent); }
-        #ai-status { padding: 8px; border-radius: 6px; font-size: 11px; text-align: center; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; color: #888; }
-        .status-ok { color: var(--accent) !important; border-color: var(--accent) !important; font-weight: bold; }
-        .status-err { color: #ff4444 !important; border-color: #ff4444 !important; }
+        #ai-status { padding: 8px; border-radius: 6px; font-size: 11px; text-align: center; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; }
+        .status-ok { color: var(--accent) !important; border-color: var(--accent) !important; }
 
         button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: #2a2d26; color: white; font-size: 11px; margin-top: 5px; }
         .btn-ai { background: var(--accent) !important; color: #000 !important; }
         input[type="range"] { width: 100%; accent-color: var(--accent); }
         label { font-size: 9px; color: #888; display: block; margin-top: 8px; }
 
+        /* Список героев */
         .h-item { background: #000; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #444; }
         .h-controls { display: flex; align-items: center; gap: 8px; }
-        .btn-vis { width: 34px; height: 34px; padding: 0; background: #333; font-size: 16px; }
-        #qr-box { position: absolute; top: 20px; left: 20px; background: white; padding: 15px; border-radius: 15px; z-index: 1000; display: none; text-align: center; color:#000; box-shadow: 0 0 30px #000; }
+        .btn-vis { width: 34px; height: 34px; padding: 0; background: #333; font-size: 16px; border-radius: 6px; }
     </style>
 </head>
 <body>
 
 <div id="selector">
-    <h1 style="color: var(--accent);">ЛЕС 2.0</h1>
-    <div class="mode-btn" onclick="startMode('screen')"><h2>🖥️ ЭКРАН</h2><p style="font-size:10px; opacity:0.6;">(Создать комнату на этом ПК)</p></div>
-    <div class="mode-btn" onclick="showManualInput()"><h2>📱 ПУЛЬТ</h2><p style="font-size:10px; opacity:0.6;">(Управлять лесом)</p></div>
-    
+    <h1 style="color: var(--accent);">ЛЕС 1</h1>
+    <div class="mode-btn" onclick="startMode('screen')"><h2>🖥️ ЭКРАН</h2></div>
+    <div class="mode-btn" onclick="showManualInput()"><h2>📱 ПУЛЬТ</h2></div>
     <div id="manual-entry">
         <input type="text" id="room-input" maxlength="4" placeholder="КОД">
         <button class="btn-ai" onclick="startMode('phone')">ПОДКЛЮЧИТЬСЯ</button>
-        <button style="background:transparent; border:1px solid #333;" onclick="location.reload()">НАЗАД</button>
     </div>
 </div>
 
 <div id="main-wrapper">
     <div id="forest">
-        <div id="qr-box"><div id="qr-img"></div><p style="color:#000; font-size:10px; font-weight:bold; margin-top:5px;">ПУЛЬТ</p></div>
         <div id="bg-container" class="wind-effect">
             <img id="bg-media" src="https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1920">
         </div>
-        <div id="hero-layer-far"></div>
-        <div id="mist-layer"></div>
-        <div id="hero-layer-near"></div>
+        <div id="hero-layer"></div>
     </div>
 
     <div id="side-panel">
         <div id="toggle-panel" onclick="$('side-panel').classList.toggle('hidden')">◀</div>
         <div class="content">
-            <div id="room-info">ROOM: <span id="room-id-display" style="color:var(--accent); font-weight:bold;">...</span></div>
-            <div id="ai-status">ОЖИДАНИЕ...</div>
+            <div id="room-info">ROOM: <span id="room-id-display" style="color:var(--accent)">...</span></div>
+            <div id="ai-status">ГОТОВ К РАБОТЕ</div>
 
             <div class="group">
-                <div class="group-title">1. ГЕРОЙ</div>
-                <input type="password" id="api-key" placeholder="Remove.bg Key" style="width:100%; background:black; color:white; padding:8px; border:1px solid #444; border-radius:4px; margin-bottom:5px;">
+                <div class="group-title">1. ГЕРОЙ (ИИ)</div>
+                <input type="password" id="api-key" placeholder="Remove.bg Key" style="width:100%; background:black; color:white; padding:8px; border:1px solid #444; margin-bottom:5px;">
                 <video id="feed" style="width:100%; border-radius:8px; background:#000;" autoplay playsinline></video>
-                <button class="btn-ai" onclick="takePhoto()">✂️ ВЫРЕЗАТЬ С КАМЕРЫ</button>
+                <button class="btn-ai" onclick="takePhoto()">✂️ ВЫРЕЗАТЬ ФОН</button>
                 <button onclick="$('h-pc').click()">📂 ЗАГРУЗИТЬ С ПК</button>
                 <input type="file" id="h-pc" hidden onchange="processFile(this.files[0])">
             </div>
 
             <div class="group">
-                <div class="group-title">2. АТМОСФЕРА</div>
-                <label>ВРЕМЯ СУТОК</label>
-                <input type="range" min="0" max="100" value="0" oninput="control('time', this.value)">
-                <label>ПЛОТНОСТЬ ТУМАНА</label>
-                <input type="range" min="0" max="100" value="0" oninput="control('mist', this.value)">
-                <label>СИЛА ВЕТРА</label>
+                <div class="group-title">2. УПРАВЛЕНИЕ ФОНОМ</div>
+                <label>МАСШТАБ ФОНА</label>
+                <input type="range" min="50" max="300" value="100" oninput="control('bg-z', this.value)">
+                <label>СМЕЩЕНИЕ X / Y</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="range" min="-1000" max="1000" value="0" oninput="control('bg-x', this.value)">
+                    <input type="range" min="-1000" max="1000" value="0" oninput="control('bg-y', this.value)">
+                </div>
+                <label>СИЛА ВЕТРА (ПОКАЧИВАНИЕ)</label>
                 <input type="range" min="0" max="15" value="2" oninput="control('wind', this.value)">
-                <button onclick="$('bg-file').click()" style="margin-top:10px;">🖼️ СМЕНИТЬ ФОН</button>
-                <button onclick="$('snd-file').click()" style="background:#1a4a1a">🎵 ЗВУК</button>
+                <button onclick="$('bg-file').click()" style="margin-top:10px;">🖼️ НОВЫЙ ФОН</button>
+            </div>
+
+            <div class="group">
+                <div class="group-title">3. ЗВУК</div>
+                <button onclick="$('snd-file').click()" style="background:#1a4a1a">🎵 ЗАГРУЗИТЬ ТРЕК</button>
                 <label>ГРОМКОСТЬ</label>
                 <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="control('vol', this.value)">
                 <input type="file" id="bg-file" hidden onchange="uploadBg(this)">
                 <input type="file" id="snd-file" hidden accept="audio/*" onchange="uploadSnd(this)">
             </div>
 
-            <div class="group" id="qr-group"><button onclick="showQR()" style="background:#4b0082">📲 ПОКАЗАТЬ QR</button></div>
             <div id="hero-list"></div>
         </div>
     </div>
@@ -122,8 +118,8 @@
 
 <script>
     const $ = id => document.getElementById(id);
-    const PREFIX = "FST_";
-    let peer, conn, role, heroes = [], bgAudio = null;
+    const PREFIX = "F1_STB_";
+    let peer, conn, role, heroes = [], bgAudio = null, bgS = {z:1, x:0, y:0};
     let roomID = "";
 
     function showManualInput() {
@@ -135,14 +131,13 @@
         role = m;
         if(role === 'phone') {
             roomID = $('room-input').value.toUpperCase();
-            if(!roomID) return alert("Введите код комнаты!");
+            if(!roomID) return alert("Введите код!");
             $('selector').style.display = 'none';
             $('main-wrapper').style.display = 'flex';
             $('forest').style.display = 'none';
             $('side-panel').style.width = '100%';
             $('side-panel').classList.remove('hidden');
             $('toggle-panel').style.display = 'none';
-            $('qr-group').style.display = 'none';
             initPeer(null, roomID);
         } else {
             $('selector').style.display = 'none';
@@ -157,53 +152,36 @@
 
     function initPeer(id, target) {
         peer = new Peer(id);
-        peer.on('open', (id) => {
-            if(role==='screen') setStatus("ЭКРАН ГОТОВ: " + roomID, "ok");
+        peer.on('open', () => {
+            if(role==='screen') setStatus("ЭКРАН ГОТОВ", "ok");
             if(target) tryConnect(PREFIX + target);
         });
         peer.on('connection', c => {
             conn = c;
-            setupConnListeners();
-            setStatus("ПУЛЬТ ПОДКЛЮЧЕН", "ok");
-        });
-        peer.on('error', err => {
-            console.error(err);
-            setStatus("ОШИБКА: " + err.type, "err");
+            setupListeners();
+            setStatus("ПОДКЛЮЧЕНО", "ok");
         });
     }
 
-    function tryConnect(targetID) {
-        setStatus("ПОИСК ЭКРАНА...");
-        conn = peer.connect(targetID, { reliable: true });
-        setupConnListeners();
-        // Тайм-аут на случай, если такого ID нет
-        setTimeout(() => {
-            if(!conn.open) setStatus("ОШИБКА: Экран не найден", "err");
-        }, 5000);
+    function tryConnect(tid) {
+        setStatus("ПОИСК...");
+        conn = peer.connect(tid, { reliable: true });
+        setupListeners();
     }
 
-    function setupConnListeners() {
-        conn.on('open', () => {
-            setStatus("СВЯЗЬ УСТАНОВЛЕНА", "ok");
-            $('room-id-display').innerText = roomID;
-        });
+    function setupListeners() {
+        conn.on('open', () => { setStatus("СВЯЗЬ ОК", "ok"); $('room-id-display').innerText = roomID; });
         conn.on('data', d => handleData(d));
-        conn.on('close', () => {
-            setStatus("СВЯЗЬ ПОТЕРЯНА", "err");
-            if(role === 'phone') setTimeout(() => tryConnect(PREFIX + roomID), 3000);
-        });
     }
 
     function handleData(d) {
         if(d.type === 'cmd') {
             if(d.name === 'wind') document.documentElement.style.setProperty('--wp', d.val + 'deg');
             if(d.name === 'vol' && bgAudio) bgAudio.volume = d.val;
-            if(d.name === 'mist') $('mist-layer').style.opacity = d.val / 100;
-            if(d.name === 'time') {
-                const v = d.val;
-                const filter = `hue-rotate(${v*0.4}deg) brightness(${1 - v/250}) sepia(${v/200})`;
-                document.documentElement.style.setProperty('--day-filter', filter);
-            }
+            if(d.name === 'bg-z') bgS.z = d.val/100;
+            if(d.name === 'bg-x') bgS.x = d.val;
+            if(d.name === 'bg-y') bgS.y = d.val;
+            
             const h = heroes.find(x => x.id == d.id);
             if(h) {
                 if(d.name === 'h-sz') h.el.style.width = d.val + "px";
@@ -211,6 +189,7 @@
                 if(d.name === 'h-vis') { h.vis = d.val; h.el.classList.toggle('hidden', !h.vis); if($('vis-'+d.id)) $('vis-'+d.id).innerText = h.vis ? '👁️' : '🌑'; }
                 if(d.name === 'h-del') deleteHeroLocal(d.id);
             }
+            $('bg-media').style.transform = `translate(${bgS.x}px, ${bgS.y}px) scale(${bgS.z})`;
         }
         if(d.type === 'hero') addHero(d.src, d.id, d.isNew);
         if(d.type === 'bg') $('bg-media').src = d.src;
@@ -226,19 +205,18 @@
         if($('h-'+id)) return;
         const img = document.createElement('img');
         img.src = src; img.className = 'hero'; img.id = 'h-' + id;
-        const isFar = heroes.length % 2 === 0;
-        img.style.bottom = isFar ? "50%" : "10%";
-        img.style.width = isFar ? "150px" : "250px";
-        if(isFar) $('hero-layer-far').appendChild(img);
-        else $('hero-layer-near').appendChild(img);
+        img.style.width = "200px";
+        $('hero-layer').appendChild(img);
+        
         heroes.push({ id, el: img, x: -300, speed: 2, angle: Math.random()*10, vis: true });
+
         const item = document.createElement('div');
         item.className = 'h-item'; item.id = 'ui-'+id;
         item.innerHTML = `
             <div class="h-controls">
-                <img src="${src}" style="width:30px;height:30px;object-fit:contain;background:#222;border-radius:4px;">
+                <img src="${src}" style="width:35px;height:35px;object-fit:contain;background:#222;border-radius:4px;filter:saturate(1.6);">
                 <div style="flex:1">
-                    <input type="range" min="30" max="600" value="${isFar?150:250}" oninput="control('h-sz', this.value, ${id})">
+                    <input type="range" min="30" max="800" value="200" oninput="control('h-sz', this.value, ${id})">
                     <input type="range" min="0" max="10" step="0.5" value="2" oninput="control('h-sp', this.value, ${id})">
                 </div>
                 <button class="btn-vis" id="vis-${id}" onclick="control('h-vis', !heroes.find(x=>x.id==${id}).vis, ${id})">👁️</button>
@@ -251,18 +229,18 @@
 
     async function callAI(blob) {
         const key = $('api-key').value;
-        if(!key) return alert("Введите API КЛЮЧ!");
-        setStatus("🚀 ИИ РАБОТАЕТ...");
+        if(!key) return alert("Нужен API Ключ Remove.bg");
+        setStatus("🚀 ИИ ОБРАБОТКА...");
         const fd = new FormData(); fd.append('image_file', blob);
         try {
             const res = await fetch('https://api.remove.bg/v1.0/removebg', { method:'POST', headers:{'X-Api-Key':key}, body:fd });
             if(res.ok) {
                 const b = await res.blob();
                 const r = new FileReader();
-                r.onload = () => { const id = Date.now(); addHero(r.result, id, true); setStatus("✅ ГОТОВО", "ok"); };
+                r.onload = () => { const id = Date.now(); addHero(r.result, id, true); setStatus("✅ УСПЕХ", "ok"); };
                 r.readAsDataURL(b);
-            } else { setStatus("❌ ОШИБКА ИИ", "err"); }
-        } catch(e) { setStatus("❌ ОШИБКА СЕТИ", "err"); }
+            }
+        } catch(e) { setStatus("❌ ОШИБКА"); }
     }
 
     function deleteHeroLocal(id) {
@@ -275,8 +253,7 @@
     function takePhoto() { const c = document.createElement('canvas'); const v = $('feed'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob(b => callAI(b)); }
     function processFile(f) { if(f) callAI(f); }
     async function initCamera() { try { const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); $('feed').srcObject = s; } catch(e){}}
-    function setStatus(t, s) { $('ai-status').innerText = t; $('ai-status').className = s === 'ok' ? 'status-ok' : (s === 'err' ? 'status-err' : ''); }
-    function showQR() { const url = window.location.href.split('?')[0] + "?join=" + roomID; $('qr-img').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}">`; $('qr-box').style.display = $('qr-box').style.display === 'block' ? 'none' : 'block'; }
+    function setStatus(t, s) { $('ai-status').innerText = t; $('ai-status').className = s === 'ok' ? 'status-ok' : ''; }
 
     function update() {
         const w = $('forest').clientWidth;
