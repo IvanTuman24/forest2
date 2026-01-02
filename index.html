@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ЛЕС 2.0 - STABLE CONNECT</title>
+    <title>ЛЕС 2.0 - MANUAL CONNECT</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --accent: #00ffcc; --panel: #111411; --ws: 5s; --wp: 2deg; --day-filter: none; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: #eee; }
         
-        #selector { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
-        .mode-btn { width: 280px; padding: 25px; border-radius: 15px; border: 2px solid var(--accent); background: #111; color: white; cursor: pointer; text-align: center; }
+        /* Стили селектора и ввода */
+        #selector { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px; }
+        .mode-btn { width: 100%; max-width: 300px; padding: 20px; border-radius: 12px; border: 2px solid var(--accent); background: #111; color: white; cursor: pointer; text-align: center; }
+        #manual-entry { display: none; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; margin-top: 10px; }
+        #room-input { padding: 15px; border-radius: 8px; border: 1px solid var(--accent); background: #000; color: var(--accent); text-align: center; font-size: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 5px; }
 
-        #main-wrapper { display: flex; width: 100vw; height: 100vh; position: relative; filter: var(--day-filter); }
+        #main-wrapper { display: none; width: 100vw; height: 100vh; position: relative; filter: var(--day-filter); }
         #forest { flex: 1; position: relative; overflow: hidden; background: #000; }
         
         #bg-container { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -35,38 +38,43 @@
         #side-panel.hidden { margin-right: -340px; }
         #toggle-panel { position: absolute; left: -45px; top: 20px; width: 45px; height: 45px; background: var(--panel); border: 1px solid #333; border-radius: 10px 0 0 10px; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 
-        .content { padding: 15px; overflow-y: auto; flex: 1; scrollbar-width: thin; }
+        .content { padding: 15px; overflow-y: auto; flex: 1; }
         .group { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #333; }
-        .group-title { font-size: 10px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: bold; letter-spacing: 1px; }
+        .group-title { font-size: 10px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: bold; }
 
-        #room-info { font-size: 14px; text-align: center; padding: 10px; background: #000; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--accent); box-shadow: inset 0 0 10px rgba(0,255,204,0.1); }
+        #room-info { font-size: 14px; text-align: center; padding: 10px; background: #000; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--accent); }
         #ai-status { padding: 8px; border-radius: 6px; font-size: 11px; text-align: center; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; color: #888; }
-        .status-ok { color: var(--accent) !important; border-color: var(--accent) !important; }
+        .status-ok { color: var(--accent) !important; border-color: var(--accent) !important; font-weight: bold; }
+        .status-err { color: #ff4444 !important; border-color: #ff4444 !important; }
 
-        button { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: #2a2d26; color: white; font-size: 11px; margin-top: 5px; transition: 0.2s; }
-        button:active { transform: scale(0.98); }
+        button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: #2a2d26; color: white; font-size: 11px; margin-top: 5px; }
         .btn-ai { background: var(--accent) !important; color: #000 !important; }
-        input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
-        label { font-size: 9px; color: #888; display: block; margin-top: 8px; text-transform: uppercase; }
+        input[type="range"] { width: 100%; accent-color: var(--accent); }
+        label { font-size: 9px; color: #888; display: block; margin-top: 8px; }
 
         .h-item { background: #000; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #444; }
         .h-controls { display: flex; align-items: center; gap: 8px; }
         .btn-vis { width: 34px; height: 34px; padding: 0; background: #333; font-size: 16px; }
-        #qr-box { position: absolute; top: 20px; left: 20px; background: white; padding: 15px; border-radius: 15px; z-index: 1000; display: none; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        #qr-box { position: absolute; top: 20px; left: 20px; background: white; padding: 15px; border-radius: 15px; z-index: 1000; display: none; text-align: center; color:#000; box-shadow: 0 0 30px #000; }
     </style>
 </head>
 <body>
 
 <div id="selector">
-    <h1 style="color: var(--accent); margin-bottom: 5px;">ЛЕС 2.0</h1>
-    <p style="color: #666; margin-bottom: 20px; font-size: 12px;">СИСТЕМА СТАБИЛЬНОЙ СВЯЗИ</p>
-    <div class="mode-btn" onclick="startMode('screen')"><h2>🖥️ ЭКРАН</h2><p style="font-size:10px; margin-top:5px; opacity:0.7;">Создать новую комнату</p></div>
-    <div class="mode-btn" onclick="startMode('phone')"><h2>📱 ПУЛЬТ</h2><p style="font-size:10px; margin-top:5px; opacity:0.7;">Подключиться к экрану</p></div>
+    <h1 style="color: var(--accent);">ЛЕС 2.0</h1>
+    <div class="mode-btn" onclick="startMode('screen')"><h2>🖥️ ЭКРАН</h2><p style="font-size:10px; opacity:0.6;">(Создать комнату на этом ПК)</p></div>
+    <div class="mode-btn" onclick="showManualInput()"><h2>📱 ПУЛЬТ</h2><p style="font-size:10px; opacity:0.6;">(Управлять лесом)</p></div>
+    
+    <div id="manual-entry">
+        <input type="text" id="room-input" maxlength="4" placeholder="КОД">
+        <button class="btn-ai" onclick="startMode('phone')">ПОДКЛЮЧИТЬСЯ</button>
+        <button style="background:transparent; border:1px solid #333;" onclick="location.reload()">НАЗАД</button>
+    </div>
 </div>
 
 <div id="main-wrapper">
     <div id="forest">
-        <div id="qr-box"><div id="qr-img"></div><p style="color:#000; font-size:10px; font-weight:bold; margin-top:10px;">СКАН ДЛЯ ПУЛЬТА</p></div>
+        <div id="qr-box"><div id="qr-img"></div><p style="color:#000; font-size:10px; font-weight:bold; margin-top:5px;">ПУЛЬТ</p></div>
         <div id="bg-container" class="wind-effect">
             <img id="bg-media" src="https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1920">
         </div>
@@ -79,7 +87,7 @@
         <div id="toggle-panel" onclick="$('side-panel').classList.toggle('hidden')">◀</div>
         <div class="content">
             <div id="room-info">ROOM: <span id="room-id-display" style="color:var(--accent); font-weight:bold;">...</span></div>
-            <div id="ai-status">ОЖИДАНИЕ ИНИЦИАЛИЗАЦИИ...</div>
+            <div id="ai-status">ОЖИДАНИЕ...</div>
 
             <div class="group">
                 <div class="group-title">1. ГЕРОЙ</div>
@@ -114,26 +122,31 @@
 
 <script>
     const $ = id => document.getElementById(id);
-    const PREFIX = "FOREST_STABLE_";
+    const PREFIX = "FST_";
     let peer, conn, role, heroes = [], bgAudio = null;
     let roomID = "";
 
+    function showManualInput() {
+        $('manual-entry').style.display = 'flex';
+        document.querySelectorAll('.mode-btn').forEach(b => b.style.display = 'none');
+    }
+
     function startMode(m) {
         role = m;
-        $('selector').style.display = 'none';
-        const urlID = new URLSearchParams(window.location.search).get('join');
-        
         if(role === 'phone') {
+            roomID = $('room-input').value.toUpperCase();
+            if(!roomID) return alert("Введите код комнаты!");
+            $('selector').style.display = 'none';
+            $('main-wrapper').style.display = 'flex';
             $('forest').style.display = 'none';
             $('side-panel').style.width = '100%';
             $('side-panel').classList.remove('hidden');
             $('toggle-panel').style.display = 'none';
             $('qr-group').style.display = 'none';
-            roomID = urlID || prompt("Введите 4-значный код комнаты:");
-            if(!roomID) { location.reload(); return; }
-            roomID = roomID.toUpperCase();
             initPeer(null, roomID);
         } else {
+            $('selector').style.display = 'none';
+            $('main-wrapper').style.display = 'flex';
             roomID = Math.random().toString(36).substring(2, 6).toUpperCase();
             $('room-id-display').innerText = roomID;
             initPeer(PREFIX + roomID, null);
@@ -143,31 +156,30 @@
     }
 
     function initPeer(id, target) {
-        peer = new Peer(id, { debug: 1 });
-        
+        peer = new Peer(id);
         peer.on('open', (id) => {
-            console.log('My ID: ' + id);
             if(role==='screen') setStatus("ЭКРАН ГОТОВ: " + roomID, "ok");
             if(target) tryConnect(PREFIX + target);
         });
-
         peer.on('connection', c => {
             conn = c;
             setupConnListeners();
             setStatus("ПУЛЬТ ПОДКЛЮЧЕН", "ok");
         });
-
         peer.on('error', err => {
-            console.error('Peer Error:', err.type);
-            if(err.type === 'peer-dotnet-found') setStatus("ОШИБКА: Код занят");
-            else setStatus("ОШИБКА СЕТИ");
+            console.error(err);
+            setStatus("ОШИБКА: " + err.type, "err");
         });
     }
 
     function tryConnect(targetID) {
-        setStatus("ПОДКЛЮЧЕНИЕ...");
+        setStatus("ПОИСК ЭКРАНА...");
         conn = peer.connect(targetID, { reliable: true });
         setupConnListeners();
+        // Тайм-аут на случай, если такого ID нет
+        setTimeout(() => {
+            if(!conn.open) setStatus("ОШИБКА: Экран не найден", "err");
+        }, 5000);
     }
 
     function setupConnListeners() {
@@ -177,7 +189,7 @@
         });
         conn.on('data', d => handleData(d));
         conn.on('close', () => {
-            setStatus("СВЯЗЬ ПОТЕРЯНА...");
+            setStatus("СВЯЗЬ ПОТЕРЯНА", "err");
             if(role === 'phone') setTimeout(() => tryConnect(PREFIX + roomID), 3000);
         });
     }
@@ -219,9 +231,7 @@
         img.style.width = isFar ? "150px" : "250px";
         if(isFar) $('hero-layer-far').appendChild(img);
         else $('hero-layer-near').appendChild(img);
-
-        heroes.push({ id, el: img, x: -300, speed: 2, angle: Math.random()*10, vis: true, isFar });
-
+        heroes.push({ id, el: img, x: -300, speed: 2, angle: Math.random()*10, vis: true });
         const item = document.createElement('div');
         item.className = 'h-item'; item.id = 'ui-'+id;
         item.innerHTML = `
@@ -241,31 +251,31 @@
 
     async function callAI(blob) {
         const key = $('api-key').value;
-        if(!key) { alert("ВСТАВЬТЕ API KEY!"); return; }
-        setStatus("🚀 ИИ: ОБРАБОТКА...");
+        if(!key) return alert("Введите API КЛЮЧ!");
+        setStatus("🚀 ИИ РАБОТАЕТ...");
         const fd = new FormData(); fd.append('image_file', blob);
         try {
             const res = await fetch('https://api.remove.bg/v1.0/removebg', { method:'POST', headers:{'X-Api-Key':key}, body:fd });
             if(res.ok) {
                 const b = await res.blob();
-                const reader = new FileReader();
-                reader.onload = () => { const id = Date.now(); addHero(reader.result, id, true); setStatus("✅ ГОТОВО", "ok"); };
-                reader.readAsDataURL(b);
-            } else { setStatus("❌ ИИ: ОШИБКА КЛЮЧА"); }
-        } catch(e) { setStatus("❌ ИИ: СБОЙ СЕТИ"); }
+                const r = new FileReader();
+                r.onload = () => { const id = Date.now(); addHero(r.result, id, true); setStatus("✅ ГОТОВО", "ok"); };
+                r.readAsDataURL(b);
+            } else { setStatus("❌ ОШИБКА ИИ", "err"); }
+        } catch(e) { setStatus("❌ ОШИБКА СЕТИ", "err"); }
     }
 
     function deleteHeroLocal(id) {
         const idx = heroes.findIndex(x => x.id == id);
         if(idx > -1) { heroes[idx].el.remove(); heroes.splice(idx, 1); if($('ui-'+id)) $('ui-'+id).remove(); }
     }
-    function uploadSnd(input) { if(input.files[0]) { const r = new FileReader(); r.onload = e => { if(conn && conn.open) conn.send({type:'snd', src:e.target.result}); playSnd(e.target.result); }; r.readAsDataURL(input.files[0]); } }
-    function playSnd(src) { if(bgAudio) bgAudio.pause(); bgAudio = new Audio(src); bgAudio.loop = true; bgAudio.play(); }
-    function uploadBg(input) { if(input.files[0]) { const r = new FileReader(); r.onload = e => { if(conn && conn.open) conn.send({type:'bg', src:e.target.result}); $('bg-media').src = e.target.result; }; r.readAsDataURL(input.files[0]); } }
+    function uploadSnd(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if(conn && conn.open) conn.send({type:'snd', src:e.target.result}); playSnd(e.target.result); }; r.readAsDataURL(i.files[0]); } }
+    function playSnd(s) { if(bgAudio) bgAudio.pause(); bgAudio = new Audio(s); bgAudio.loop = true; bgAudio.play(); }
+    function uploadBg(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if(conn && conn.open) conn.send({type:'bg', src:e.target.result}); $('bg-media').src = e.target.result; }; r.readAsDataURL(i.files[0]); } }
     function takePhoto() { const c = document.createElement('canvas'); const v = $('feed'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); c.toBlob(b => callAI(b)); }
     function processFile(f) { if(f) callAI(f); }
     async function initCamera() { try { const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); $('feed').srcObject = s; } catch(e){}}
-    function setStatus(t, s) { $('ai-status').innerText = t; $('ai-status').className = s === 'ok' ? 'status-ok' : ''; }
+    function setStatus(t, s) { $('ai-status').innerText = t; $('ai-status').className = s === 'ok' ? 'status-ok' : (s === 'err' ? 'status-err' : ''); }
     function showQR() { const url = window.location.href.split('?')[0] + "?join=" + roomID; $('qr-img').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}">`; $('qr-box').style.display = $('qr-box').style.display === 'block' ? 'none' : 'block'; }
 
     function update() {
