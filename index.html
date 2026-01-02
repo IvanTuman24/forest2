@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ЛЕС 1 - STABLE</title>
+    <title>ЛЕС 1 - FINAL STABLE</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --accent: #00ffcc; --panel: #111411; --ws: 5s; --wp: 2deg; }
@@ -36,7 +36,7 @@
 
         #room-info { font-size: 14px; text-align: center; padding: 10px; background: #000; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--accent); }
         #ai-status { padding: 8px; border-radius: 6px; font-size: 11px; text-align: center; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; }
-        .status-ok { color: var(--accent) !important; border-color: var(--accent) !important; }
+        .status-ok { color: var(--accent) !important; border-color: var(--accent) !important; font-weight: bold; }
         .status-err { color: #ff4444 !important; border-color: #ff4444 !important; }
 
         button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: #2a2d26; color: white; font-size: 11px; margin-top: 5px; }
@@ -53,11 +53,12 @@
 
 <div id="selector">
     <h1 style="color: var(--accent);">ЛЕС 1</h1>
-    <div class="mode-btn" onclick="startMode('screen')"><h2>🖥️ ЭКРАН</h2></div>
-    <div class="mode-btn" onclick="showManualInput()"><h2>📱 ПУЛЬТ</h2></div>
+    <div class="mode-btn" onclick="startMode('screen')"><h2>🖥️ ЭКРАН</h2><p style="font-size: 10px; opacity: 0.6;">(Создать на этом устройстве)</p></div>
+    <div class="mode-btn" onclick="showManualInput()"><h2>📱 ПУЛЬТ</h2><p style="font-size: 10px; opacity: 0.6;">(Управлять другим)</p></div>
     <div id="manual-entry">
         <input type="text" id="room-input" maxlength="4" placeholder="КОД">
         <button class="btn-ai" onclick="startMode('phone')">ПОДКЛЮЧИТЬСЯ</button>
+        <button style="background:transparent; color:#666" onclick="location.reload()">НАЗАД</button>
     </div>
 </div>
 
@@ -100,11 +101,10 @@
 
 <script>
     const $ = id => document.getElementById(id);
-    const PREFIX = "L1_STABLE_";
+    const PREFIX = "LF1_"; // Короткий префикс для стабильности
     let peer, conn, role, heroes = [], bgAudio = null, bgS = {z:1, x:0, y:0};
     let roomID = "";
 
-    // Загрузка ключа из памяти [cite: 2025-12-30]
     window.onload = () => { if(localStorage.getItem('rbg_key')) $('api-key').value = localStorage.getItem('rbg_key'); };
     function saveKey(v) { localStorage.setItem('rbg_key', v); }
 
@@ -113,7 +113,7 @@
     function startMode(m) {
         role = m;
         if(role === 'phone') {
-            roomID = $('room-input').value.toUpperCase();
+            roomID = $('room-input').value.toUpperCase().trim();
             if(!roomID) return alert("Введите код!");
             $('selector').style.display = 'none'; $('main-wrapper').style.display = 'flex';
             $('forest').style.display = 'none'; $('side-panel').style.width = '100%';
@@ -128,26 +128,47 @@
         requestAnimationFrame(update);
     }
 
-    function initPeer(id, target) {
-        peer = new Peer(id);
-        peer.on('open', () => {
+    function initPeer(myId, targetRoom) {
+        if(peer) peer.destroy();
+        peer = new Peer(myId, { debug: 1 });
+        
+        peer.on('open', (id) => {
+            console.log("Peer Open ID:", id);
             if(role==='screen') setStatus("ЭКРАН ГОТОВ: " + roomID, "ok");
-            if(target) tryConnect(PREFIX + target);
+            if(targetRoom) {
+                setStatus("ПОИСК ЭКРАНА: " + targetRoom);
+                setTimeout(() => { tryConnect(PREFIX + targetRoom); }, 1000);
+            }
         });
-        peer.on('connection', c => { conn = c; setupListeners(); setStatus("ПУЛЬТ ПОДКЛЮЧЕН", "ok"); });
-        peer.on('error', e => setStatus("ОШИБКА: " + e.type, "err"));
+
+        peer.on('connection', c => {
+            conn = c;
+            setupListeners();
+            setStatus("ПУЛЬТ ПОДКЛЮЧЕН", "ok");
+        });
+
+        peer.on('error', e => {
+            console.error("Peer Error:", e.type);
+            setStatus("СБОЙ: " + e.type, "err");
+            if(e.type === 'peer-unavailable') alert("Комната " + roomID + " не найдена. Проверьте код на Экране.");
+        });
     }
 
     function tryConnect(tid) {
-        setStatus("ПОИСК ЭКРАНА...");
         conn = peer.connect(tid, { reliable: true });
         setupListeners();
     }
 
     function setupListeners() {
-        conn.on('open', () => { setStatus("СВЯЗЬ УСТАНОВЛЕНА", "ok"); $('room-id-display').innerText = roomID; });
+        conn.on('open', () => { 
+            setStatus("СВЯЗЬ УСТАНОВЛЕНА", "ok"); 
+            $('room-id-display').innerText = roomID;
+        });
         conn.on('data', d => handleData(d));
-        conn.on('close', () => { setStatus("СВЯЗЬ ПОТЕРЯНА", "err"); if(role==='phone') setTimeout(()=>tryConnect(PREFIX+roomID), 3000); });
+        conn.on('close', () => { 
+            setStatus("СВЯЗЬ ПОТЕРЯНА", "err"); 
+            if(role==='phone') setTimeout(()=>tryConnect(PREFIX+roomID), 3000); 
+        });
     }
 
     function handleData(d) {
