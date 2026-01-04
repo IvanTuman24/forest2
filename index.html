@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ЛЕС 2.1 - FREE AI</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></script>
+    <title>ЛЕС 1 - ВЕРСИЯ 8.6</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --accent: #00ffcc; --panel: #111411; --ws: 5s; --wp: 2deg; }
@@ -24,33 +22,25 @@
         @keyframes wind { 0%, 100% { transform: skewX(0deg); } 50% { transform: skewX(var(--wp)); } }
         
         #hero-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-        .hero { position: absolute; will-change: transform; transform-origin: center bottom; bottom: 0; filter: saturate(1.4) contrast(1.1); }
-        .hero.hidden { display: none; }
+        .hero { position: absolute; transform-origin: center bottom; bottom: 0; filter: saturate(1.4) contrast(1.1); }
 
         #side-panel { width: 340px; background: var(--panel); border-left: 1px solid #333; transition: 0.4s; z-index: 100; position: relative; display: flex; flex-direction: column; height: 100vh; }
         #side-panel.hidden { margin-right: -340px; }
         #toggle-panel { position: absolute; left: -45px; top: 20px; width: 45px; height: 45px; background: var(--panel); border: 1px solid #333; border-radius: 10px 0 0 10px; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-        .content { padding: 15px; overflow-y: auto; flex: 1; padding-bottom: 80px; }
+        .content { padding: 15px; overflow-y: auto; flex: 1; padding-bottom: 100px; }
         .group { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #333; }
         .group-title { font-size: 10px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: bold; }
 
-        #room-info { font-size: 14px; text-align: center; padding: 10px; background: #000; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--accent); }
-        #ai-status { padding: 8px; border-radius: 6px; font-size: 11px; text-align: center; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; min-height: 32px; }
-        .status-ok { color: var(--accent); border-color: var(--accent); }
+        #ai-status { padding: 10px; border-radius: 6px; font-size: 11px; text-align: center; margin-bottom: 10px; background: #1a1a1a; border: 1px solid #333; color: #aaa; }
+        .status-active { color: var(--accent); border-color: var(--accent); background: rgba(0, 255, 204, 0.05); }
 
-        button { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: #2a2d26; color: white; font-size: 11px; margin-top: 5px; }
-        .btn-ai { background: var(--accent) !important; color: #000 !important; }
-        input[type="range"] { width: 100%; accent-color: var(--accent); }
-        label { font-size: 9px; color: #888; display: block; margin-top: 5px; }
-
-        .h-item { background: #000; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #444; }
-        .h-controls { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
-        .btn-vis { width: 30px; height: 30px; padding: 0; background: #333; }
-        
         #history-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
         .hist-card { width: 100%; aspect-ratio: 1; background: #222; border-radius: 4px; border: 1px solid #444; cursor: pointer; object-fit: contain; }
-        #qr-box { position: absolute; top: 20px; left: 20px; background: white; padding: 10px; border-radius: 10px; z-index: 1000; display: none; text-align: center; color: #000; }
+
+        button { width: 100%; padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background: #2a2d26; color: white; font-size: 11px; margin-top: 5px; }
+        .btn-ai { background: var(--accent) !important; color: #000 !important; }
+        input[type="range"] { width: 100%; accent-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -62,7 +52,6 @@
 
 <div id="main-wrapper">
     <div id="forest">
-        <div id="qr-box"><div id="qr-img"></div><p style="font-size:10px;font-weight:bold">СКАН К ПОДКЛЮЧЕНИЮ</p></div>
         <div id="bg-container" class="wind-effect"><img id="bg-media" src="https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1920"></div>
         <div id="hero-layer"></div>
     </div>
@@ -70,15 +59,16 @@
     <div id="side-panel">
         <div id="toggle-panel" onclick="$('side-panel').classList.toggle('hidden')">◀</div>
         <div class="content">
-            <div id="room-info">ROOM: <span id="room-id-display" style="color:var(--accent)">...</span></div>
-            <div id="ai-status">ЗАГРУЗКА ИИ...</div>
+            <div id="room-info" class="group" style="text-align:center">ROOM ID: <b id="room-id-display" style="color:var(--accent)">...</b></div>
+            
+            <div id="ai-status">ОЖИДАНИЕ ДЕЙСТВИЙ</div>
 
             <div class="group">
                 <div class="group-title">1. СОЗДАНИЕ ГЕРОЯ</div>
-                <input type="password" id="api-key" placeholder="Ключ Remove.bg (необязательно)" style="width:100%; background:black; color:white; padding:8px; border:1px solid #444; margin-bottom:5px;">
+                <input type="password" id="api-key" placeholder="API Ключ (Remove.bg)" style="width:100%; background:black; color:white; padding:8px; border:1px solid #444; margin-bottom:5px;">
                 <video id="feed" style="width:100%; border-radius:8px; background:#000;" autoplay playsinline></video>
-                <button class="btn-ai" onclick="takePhoto()">✂️ ВЫРЕЗАТЬ С КАМЕРЫ</button>
-                <button onclick="$('h-pc').click()">📂 ЗАГРУЗИТЬ С ПК</button>
+                <button class="btn-ai" onclick="takePhoto()">✂️ СДЕЛАТЬ ФОТО И ВЫРЕЗАТЬ</button>
+                <button onclick="$('h-pc').click()">📂 ЗАГРУЗИТЬ ГЕРОЯ С ПК</button>
                 <input type="file" id="h-pc" hidden onchange="processFile(this.files[0])">
             </div>
 
@@ -88,16 +78,17 @@
             </div>
 
             <div class="group">
-                <div class="group-title">2. ОКРУЖЕНИЕ</div>
+                <div class="group-title">2. НАСТРОЙКИ МИРА</div>
                 <button onclick="$('bg-file').click()">🖼️ СМЕНИТЬ ФОН</button>
-                <button onclick="$('snd-file').click()" style="background:#1a4a1a">🎵 ЗВУК</button>
+                <button onclick="$('snd-file').click()" style="background:#1a4a1a">🎵 ДОБАВИТЬ ЗВУК</button>
+                <label style="font-size:10px">ГРОМКОСТЬ</label>
                 <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="control('vol', this.value)">
+                <label style="font-size:10px">МАСШТАБ ФОНА</label>
                 <input type="range" min="50" max="300" value="100" oninput="control('bg-z', this.value)">
                 <input type="file" id="bg-file" hidden onchange="uploadBg(this)">
                 <input type="file" id="snd-file" hidden accept="audio/*" onchange="uploadSnd(this)">
             </div>
             
-            <div class="group" id="qr-group"><button onclick="showQR()" style="background:#4b0082">📲 ПОДКЛЮЧИТЬ ПУЛЬТ</button></div>
             <div id="hero-list"></div>
         </div>
     </div>
@@ -105,35 +96,26 @@
 
 <script>
     const $ = id => document.getElementById(id);
-    let peer, conn, role, heroes = [], history = [], bgAudio = null, bgS = {z:1, x:0, y:0};
-    let roomID = "", net = null;
+    let peer, conn, role, heroes = [], history = [], bgAudio = null, bgS = {z:1};
+    let roomID = "";
 
-    // Инициализация бесплатного ИИ
-    async function loadFreeAI() {
-        try {
-            net = await bodyPix.load({
-                architecture: 'MobileNetV1',
-                outputStride: 16,
-                multiplier: 0.75,
-                quantBytes: 2
-            });
-            setStatus("БЕСПЛАТНЫЙ ИИ ГОТОВ", "ok");
-        } catch(e) { setStatus("ОШИБКА ЗАГРУЗКИ ИИ", "err"); }
+    function setStatus(text, active = false) {
+        const el = $('ai-status');
+        el.innerText = text;
+        el.className = active ? 'status-active' : '';
+        console.log("AI Status:", text);
     }
 
     function startMode(m) {
         role = m;
         $('selector').style.display = 'none';
-        loadFreeAI();
-        const urlID = new URLSearchParams(window.location.search).get('join');
         initCamera();
         if(role === 'phone') {
             $('forest').style.display = 'none';
             $('side-panel').style.width = '100%';
             $('side-panel').classList.remove('hidden');
             $('toggle-panel').style.display = 'none';
-            $('qr-group').style.display = 'none';
-            roomID = urlID || prompt("Введите ID комнаты:");
+            roomID = prompt("Введите ID комнаты с экрана:");
             initPeer(null, roomID);
         } else {
             roomID = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -143,98 +125,77 @@
         requestAnimationFrame(update);
     }
 
-    // Логика вырезания фона БЕЗ КЛЮЧА
-    async function removeBackgroundFree(sourceElement) {
-        setStatus("🧘 ИИ ДУМАЕТ...");
-        const segmentation = await net.segmentPerson(sourceElement);
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = sourceElement.width || sourceElement.videoWidth;
-        canvas.height = sourceElement.height || sourceElement.videoHeight;
-        const ctx = canvas.getContext('2d');
-        
-        ctx.drawImage(sourceElement, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const pixel = imageData.data;
-        for (let i = 0; i < pixel.length; i += 4) {
-            if (!segmentation.data[i / 4]) pixel[i + 3] = 0; // Делаем фон прозрачным
-        }
-        ctx.putImageData(imageData, 0, 0);
-        return canvas.toDataURL();
-    }
-
-    async function handleHeroCreation(source) {
+    async function handleHeroCreation(blob) {
         const key = $('api-key').value;
-        let finalSrc;
-
-        if(key) {
-            // Если есть ключ - используем remove.bg
-            setStatus("🚀 Remove.bg...");
-            const blob = await (await fetch(source)).blob();
-            const fd = new FormData(); fd.append('image_file', blob);
-            const res = await fetch('https://api.remove.bg/v1.0/removebg', { 
-                method:'POST', 
-                headers:{'X-Api-Key':key}, 
-                body:fd 
-            });
-            if(res.ok) {
-                const b = await res.blob();
-                finalSrc = await new Promise(r => { 
-                    const reader = new FileReader(); 
-                    reader.onload = () => r(reader.result); 
-                    reader.readAsDataURL(b); 
-                });
-            }
-        } else {
-            // Если ключа нет - наш бесплатный метод
-            const tempImg = new Image();
-            tempImg.src = source;
-            await tempImg.decode();
-            finalSrc = await removeBackgroundFree(tempImg);
+        if(!key) {
+            setStatus("⚠️ ОШИБКА: Введите API ключ для качественного вырезания!");
+            alert("Для качественного вырезания нужен ключ от Remove.bg (он бесплатный на первые 50 фото)");
+            return;
         }
 
-        if(finalSrc) {
-            addHero(finalSrc, Date.now(), true);
-            setStatus("✅ ГОТОВО", "ok");
+        setStatus("🚀 ИИ: Начинаю удаление фона...", true);
+        
+        const fd = new FormData();
+        fd.append('image_file', blob);
+        fd.append('size', 'auto');
+
+        try {
+            const res = await fetch('https://api.remove.bg/v1.0/removebg', {
+                method: 'POST',
+                headers: { 'X-Api-Key': key },
+                body: fd
+            });
+
+            if (res.ok) {
+                setStatus("✅ ИИ: Фон успешно удален! Добавляю в лес...", true);
+                const resultBlob = await res.blob();
+                const reader = new FileReader();
+                reader.onload = () => {
+                    addHero(reader.result, Date.now(), true);
+                    setTimeout(() => setStatus("ОЖИДАНИЕ ДЕЙСТВИЙ"), 3000);
+                };
+                reader.readAsDataURL(resultBlob);
+            } else {
+                const err = await res.json();
+                setStatus("❌ ОШИБКА ИИ: " + err.errors[0].title);
+            }
+        } catch (e) {
+            setStatus("❌ СБОЙ СЕТИ: Проверьте интернет");
         }
     }
 
-    // Остальные функции (PeerJS, управление и т.д.)
+    // --- СТАНДАРТНЫЕ ФУНКЦИИ (PeerJS, Герои, Анимация) ---
     function initPeer(id, target) {
         peer = new Peer(id);
-        peer.on('open', () => {
-            if(role==='screen') setStatus("ЭКРАН ГОТОВ: " + roomID, "ok");
-            if(target) connect("F2-" + target);
-        });
-        peer.on('connection', c => {
-            conn = c; setStatus("ПУЛЬТ ПОДКЛЮЧЕН", "ok");
-            conn.on('data', d => handleData(d));
-        });
+        peer.on('open', () => { setStatus("СИСТЕМА ГОТОВА: Связь открыта"); if(target) connect("F2-" + target); });
+        peer.on('connection', c => { conn = c; setStatus("ПУЛЬТ ПОДКЛЮЧЕН", true); setupConn(c); });
     }
 
     function connect(id) {
         conn = peer.connect(id);
-        conn.on('open', () => { setStatus("СВЯЗЬ ОК", "ok"); $('room-id-display').innerText = roomID; });
-        conn.on('data', d => handleData(d));
+        setupConn(conn);
+    }
+
+    function setupConn(c) {
+        c.on('open', () => { setStatus("СВЯЗЬ УСТАНОВЛЕНА ✅", true); });
+        c.on('data', d => handleData(d));
     }
 
     function handleData(d) {
         if(d.type === 'cmd') {
             if(d.name === 'bg-z') bgS.z = d.val/100;
-            if(d.name === 'wind') document.documentElement.style.setProperty('--wp', d.val + 'deg');
             if(d.name === 'vol' && bgAudio) bgAudio.volume = d.val;
             const h = heroes.find(x => x.id == d.id);
             if(h) {
                 if(d.name === 'h-sz') h.el.style.width = d.val + "px";
                 if(d.name === 'h-sp') h.speed = parseFloat(d.val);
-                if(d.name === 'h-vis') { h.vis = d.val; h.el.classList.toggle('hidden', !h.vis); }
                 if(d.name === 'h-del') deleteHeroLocal(d.id);
             }
             $('bg-media').style.transform = `scale(${bgS.z})`;
         }
         if(d.type === 'hero') addHero(d.src, d.id, d.isNew);
-        if(d.type === 'bg') $('bg-media').src = d.src;
-        if(d.type === 'snd') playSnd(d.src);
+        if(d.type === 'bg') { setStatus("🖼️ ЗАГРУЗКА НОВОГО ФОНА..."); $('bg-media').src = d.src; }
+        if(d.type === 'snd') { setStatus("🎵 ЗАГРУЗКА ЗВУКА..."); playSnd(d.src); }
     }
 
     function control(name, val, id = null) {
@@ -247,18 +208,19 @@
         const img = document.createElement('img');
         img.src = src; img.className = 'hero'; img.id = 'h-' + id;
         const isFar = heroes.length % 2 === 0;
-        img.style.bottom = isFar ? "50%" : "10%";
-        img.style.width = isFar ? "150px" : "250px";
+        img.style.bottom = isFar ? "45%" : "5%";
+        img.style.width = isFar ? "150px" : "280px";
         img.style.zIndex = isFar ? 5 : 20;
         $('hero-layer').appendChild(img);
-        heroes.push({ id, el: img, x: -300, speed: 2, angle: Math.random()*10, vis: true });
+        heroes.push({ id, el: img, x: -300, speed: 2, angle: Math.random()*10 });
 
         const item = document.createElement('div');
         item.className = 'h-item'; item.id = 'ui-'+id;
-        item.innerHTML = `<div class="h-controls">
-            <img src="${src}" style="width:40px;height:40px;object-fit:contain;background:#222;border-radius:4px;">
-            <div style="flex:1"><input type="range" min="30" max="600" value="${isFar?150:250}" oninput="control('h-sz', this.value, ${id})"></div>
-            <button class="btn-vis" onclick="control('h-del', 0, ${id})">×</button>
+        item.style = "background:#000; padding:10px; border-radius:8px; margin-top:8px; border:1px solid #444;";
+        item.innerHTML = `<div style="display:flex; align-items:center; gap:10px;">
+            <img src="${src}" style="width:40px;height:40px;object-fit:contain;">
+            <input type="range" min="30" max="600" value="${isFar?150:280}" oninput="control('h-sz', this.value, ${id})">
+            <button style="width:30px; background:#500" onclick="control('h-del', 0, ${id})">×</button>
         </div>`;
         $('hero-list').appendChild(item);
         addToHistory(src, id);
@@ -270,34 +232,40 @@
         history.push({id, src});
         const img = document.createElement('img');
         img.src = src; img.className = 'hist-card';
-        img.onclick = () => addHero(src, Date.now(), true);
+        img.onclick = () => { setStatus("♻️ ВОЗВРАТ ГЕРОЯ ИЗ ИСТОРИИ..."); addHero(src, Date.now(), true); };
         $('history-grid').appendChild(img);
+    }
+
+    function deleteHeroLocal(id) {
+        const idx = heroes.findIndex(x => x.id == id);
+        if(idx > -1) { 
+            setStatus("🗑️ ГЕРОЙ УДАЛЕН (ПЕРЕМЕЩЕН В ИСТОРИЮ)");
+            heroes[idx].el.remove(); 
+            heroes.splice(idx, 1); 
+            if($('ui-'+id)) $('ui-'+id).remove(); 
+        }
     }
 
     function takePhoto() { 
         const c = document.createElement('canvas'); const v = $('feed'); 
         c.width = v.videoWidth; c.height = v.videoHeight; 
         c.getContext('2d').drawImage(v, 0, 0); 
-        handleHeroCreation(c.toDataURL()); 
+        c.toBlob(blob => handleHeroCreation(blob)); 
     }
 
-    function processFile(f) { 
-        const r = new FileReader(); 
-        r.onload = (e) => handleHeroCreation(e.target.result); 
-        r.readAsDataURL(f); 
-    }
-
+    function processFile(f) { if(f) handleHeroCreation(f); }
     function uploadBg(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if(conn) conn.send({type:'bg', src:e.target.result}); $('bg-media').src = e.target.result; }; r.readAsDataURL(i.files[0]); } }
     function uploadSnd(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if(conn) conn.send({type:'snd', src:e.target.result}); playSnd(e.target.result); }; r.readAsDataURL(i.files[0]); } }
     function playSnd(s) { if(bgAudio) bgAudio.pause(); bgAudio = new Audio(s); bgAudio.loop = true; bgAudio.play(); }
     async function initCamera() { try { const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); $('feed').srcObject = s; } catch(e){}}
-    function setStatus(t, s) { $('ai-status').innerText = t; $('ai-status').className = s === 'ok' ? 'status-ok' : ''; }
-    function showQR() { const url = window.location.href.split('?')[0] + "?join=" + roomID; $('qr-img').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}">`; $('qr-box').style.display = 'block'; }
-    function deleteHeroLocal(id) { const idx = heroes.findIndex(x => x.id == id); if(idx > -1) { heroes[idx].el.remove(); heroes.splice(idx, 1); if($('ui-'+id)) $('ui-'+id).remove(); } }
     
     function update() {
         const w = $('forest').clientWidth;
-        heroes.forEach(h => { if(h.vis) { h.x += h.speed; h.angle += 0.05; if(h.x > w + 400) h.x = -400; h.el.style.transform = `translateX(${h.x}px) translateY(${Math.sin(h.angle)*4}px)`; } });
+        heroes.forEach(h => { 
+            h.x += h.speed; h.angle += 0.05; 
+            if(h.x > w + 400) h.x = -400; 
+            h.el.style.transform = `translateX(${h.x}px) translateY(${Math.sin(h.angle)*4}px)`; 
+        });
         requestAnimationFrame(update);
     }
 </script>
