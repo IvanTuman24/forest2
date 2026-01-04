@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ЛЕС 1 - ВЕРСИЯ 8.9</title>
+    <title>ЛЕС 1 - ВЕРСИЯ 9.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -17,27 +17,40 @@
         #hero-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
         .hero { position: absolute; transform-origin: center bottom; bottom: 0; }
 
+        /* ПАНЕЛЬ УПРАВЛЕНИЯ (ОТКРЫТА ПО УМОЛЧАНИЮ) */
         #side-panel { 
-            position: fixed; right: 0; top: 0; width: 320px; height: 100%; 
+            position: fixed; right: 0; top: 0; width: 350px; height: 100%; 
             background: var(--panel); border-left: 1px solid #333; z-index: 100;
-            transform: translateX(100%); transition: 0.4s; padding: 20px; overflow-y: auto;
+            transition: 0.4s; padding: 20px; overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
         }
-        #side-panel.open { transform: translateX(0); }
+        #side-panel.hidden { transform: translateX(100%); }
         #panel-trigger { 
             position: absolute; left: -45px; top: 20px; width: 45px; height: 45px; 
             background: var(--panel); color: var(--accent); border: 1px solid #333; cursor: pointer; border-radius: 10px 0 0 10px;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
         }
 
         .group { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
-        .group-title { font-size: 10px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; font-weight: bold; }
-        input { width: 100%; padding: 12px; background: #000; border: 1px solid #444; color: #fff; margin-bottom: 10px; border-radius: 6px; }
-        button { width: 100%; padding: 12px; background: var(--accent); color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .group-title { font-size: 10px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; font-weight: bold; letter-spacing: 1px; }
         
-        #active-list .h-ctrl { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 8px; margin-bottom: 8px; }
+        input, button { width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 13px; outline: none; }
+        input { background: #000; color: #fff; border: 1px solid #444; margin-bottom: 10px; }
+        button { background: #222; color: #fff; cursor: pointer; font-weight: bold; transition: 0.2s; border: 1px solid #444; }
+        button:hover { background: #333; border-color: var(--accent); }
+        .btn-main { background: var(--accent); color: #000; border: none; margin-top: 5px; }
 
-        #phone-view { position: fixed; inset: 0; background: #000; z-index: 3000; display: none; flex-direction: column; padding: 20px; overflow-y: auto; }
-        .big-upload { width: 100%; padding: 30px; border: 3px dashed var(--accent); border-radius: 15px; text-align: center; margin-bottom: 20px; }
-        .phone-journal-item { width: 100%; aspect-ratio: 1; border: 2px solid #333; border-radius: 8px; object-fit: cover; }
+        /* Список героев */
+        .h-ctrl { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; }
+        .h-ctrl img { width: 40px; height: 40px; object-fit: contain; border-radius: 4px; background: #000; }
+        input[type="range"] { padding: 0; margin: 0; cursor: pointer; }
+
+        /* Статус-бар */
+        #status-log { font-size: 11px; color: var(--accent); margin-top: 10px; text-align: center; height: 15px; }
+
+        /* Режим телефона */
+        #phone-view { position: fixed; inset: 0; background: #000; z-index: 3000; display: none; flex-direction: column; padding: 20px; }
+        .upload-area { flex: 1; border: 3px dashed var(--accent); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px 0; }
     </style>
 </head>
 <body>
@@ -48,37 +61,45 @@
 </div>
 
 <div id="side-panel">
-    <button id="panel-trigger" onclick="$('side-panel').classList.toggle('open')">◀</button>
+    <button id="panel-trigger" onclick="$('side-panel').classList.toggle('hidden')">◀</button>
+    
     <div class="group">
-        <div class="group-title">🔑 СИСТЕМА</div>
-        <input type="text" id="key-cloud" placeholder="Ключ Imgbb">
-        <input type="text" id="room-id" placeholder="ID Комнаты">
-        <button onclick="generateQR()">📲 ПОЛУЧИТЬ QR</button>
+        <div class="group-title">🛠️ НАСТРОЙКА СИСТЕМЫ</div>
+        <input type="text" id="key-cloud" placeholder="Вставьте API Imgbb">
+        <input type="text" id="room-id" placeholder="Назовите комнату (любое имя)">
+        <button class="btn-main" onclick="generateQR()">📲 ПОДКЛЮЧИТЬ ТЕЛЕФОН</button>
+        <div id="status-log">Ожидание настройки...</div>
     </div>
-    <div class="group-title">👥 ГЕРОИ В ЛЕСУ</div>
-    <div id="active-list"></div>
+
+    <div class="group">
+        <div class="group-title">📁 ЗАГРУЗКА С ЭТОГО ПК</div>
+        <button onclick="$('pc-file').click()">➕ ДОБАВИТЬ ГЕРОЯ</button>
+        <input type="file" id="pc-file" hidden accept="image/*" onchange="localUpload(this)">
+    </div>
+
+    <div class="group">
+        <div class="group-title">👥 ГЕРОИ В ЛЕСУ</div>
+        <div id="active-list"></div>
+    </div>
 </div>
 
-<div id="qr-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:2000;" onclick="this.style.display='none'">
+<div id="qr-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.95); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:2000;" onclick="this.style.display='none'">
     <div id="qr-code" style="background:white; padding:15px; border-radius:10px;"></div>
+    <p style="margin-top:20px; font-weight:bold; color:var(--accent)">СКАНЕР ДЛЯ ПУЛЬТА</p>
 </div>
 
 <div id="phone-view">
     <div class="group">
-        <div class="group-title">⚙️ НАСТРОЙКА ИИ</div>
-        <input type="text" id="key-ai" placeholder="Вставьте ключ Remove.bg">
+        <div class="group-title">КЛЮЧ ИИ (Remove.bg)</div>
+        <input type="text" id="key-ai" placeholder="Введите ключ для вырезания">
     </div>
-    <div class="big-upload" onclick="$('file-in').click()">
-        <span style="font-size:40px">📷</span>
-        <p style="margin-top:10px">ЗАГРУЗИТЬ ГЕРОЯ</p>
+    <div class="upload-area" onclick="$('file-in').click()">
+        <span style="font-size:60px">📷</span>
+        <p style="margin-top:10px; font-weight:bold; color:var(--accent)">ЗАГРУЗИТЬ ГЕРОЯ</p>
     </div>
     <input type="file" id="file-in" hidden accept="image/*" onchange="mobileUpload(this)">
-    
-    <div class="group">
-        <div class="group-title">ЖУРНАЛ (Кликни, чтобы отправить в лес)</div>
-        <div id="phone-journal" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
-    </div>
-    <div id="phone-status" style="text-align:center; color: var(--accent);"></div>
+    <div id="phone-journal" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;"></div>
+    <div id="phone-status" style="margin-top:20px; text-align:center; color:var(--accent)"></div>
 </div>
 
 <script>
@@ -93,41 +114,57 @@
             $('room-id').value = params.get('rid');
             initPeer("P-" + params.get('rid'), "S-" + params.get('rid'));
         }
-        update();
     };
+
+    function log(msg) { $('status-log').innerText = msg; }
 
     function initPeer(myId, targetId) {
         peer = new Peer(myId);
         peer.on('connection', c => {
             conn = c;
-            conn.on('data', d => { if(d.type === 'spawn') spawnHero(d.src); });
+            conn.on('data', d => { 
+                if(d.type === 'spawn') {
+                    spawnHero(d.src);
+                    log("Герой прилетел с телефона!");
+                }
+            });
         });
         if(targetId) {
-            const tryConnect = () => {
+            setTimeout(() => {
                 conn = peer.connect(targetId);
-                conn.on('open', () => $('phone-status').innerText = "✅ ПОДКЛЮЧЕНО К ЭКРАНУ");
-            };
-            setTimeout(tryConnect, 1000);
+                conn.on('open', () => $('phone-status').innerText = "✅ ПОДКЛЮЧЕНО К ПК");
+            }, 1000);
         }
     }
 
     function generateQR() {
         const kc = $('key-cloud').value;
         const rid = $('room-id').value;
-        if(!kc || !rid) return alert("Заполните ключи!");
+        if(!kc || !rid) return alert("Введите данные!");
+        
         initPeer("S-" + rid, null);
         const url = `${window.location.origin}${window.location.pathname}?kc=${kc}&rid=${rid}`;
+        
         $('qr-code').innerHTML = "";
         new QRCode($('qr-code'), { text: url, width: 220, height: 220 });
         $('qr-modal').style.display = 'flex';
+        log("Система готова. Подключите пульт.");
+    }
+
+    // Загрузка локально с ПК
+    function localUpload(input) {
+        if(!input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = e => spawnHero(e.target.result);
+        reader.readAsDataURL(input.files[0]);
     }
 
     async function mobileUpload(input) {
         if(!input.files[0]) return;
         const kc = $('key-cloud').value;
         const status = $('phone-status');
-        status.innerText = "⏳ ЗАГРУЗКА В ОБЛАКО...";
-
+        status.innerText = "⏳ ЗАГРУЗКА...";
+        
         const fd = new FormData();
         fd.append('image', input.files[0]);
 
@@ -136,45 +173,42 @@
             const json = await res.json();
             if(json.success) {
                 status.innerText = "✅ В ЖУРНАЛЕ";
-                createJournalThumbnail(json.data.url, input.files[0]);
+                addPhoneThumb(json.data.url, input.files[0]);
             }
-        } catch(e) { status.innerText = "❌ ОШИБКА ОБЛАКА"; }
+        } catch(e) { status.innerText = "❌ ОШИБКА"; }
     }
 
-    function createJournalThumbnail(url, originalFile) {
+    function addPhoneThumb(url, file) {
         const img = document.createElement('img');
         img.src = url;
-        img.className = 'phone-journal-item';
-        img.onclick = () => confirmToForest(originalFile);
+        img.style = "width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; border:2px solid #333";
+        img.onclick = () => confirmToForest(file);
         $('phone-journal').prepend(img);
     }
 
     async function confirmToForest(file) {
         const aiKey = $('key-ai').value;
-        if(!aiKey) return alert("Введите ключ Remove.bg в поле настройки ИИ!");
-        
-        if(confirm("Отправить этого героя на экран? (Будет использован кредит ИИ)")) {
-            $('phone-status').innerText = "✂️ ИИ ВЫРЕЗАЕТ ФОН...";
-            const fd = new FormData();
-            fd.append('image_file', file);
+        if(!aiKey) return alert("Введите ключ ИИ!");
+        if(!confirm("Отправить в лес?")) return;
 
-            try {
-                const res = await fetch('https://api.remove.bg/v1.0/removebg', {
-                    method: 'POST',
-                    headers: { 'X-Api-Key': aiKey },
-                    body: fd
-                });
-                if(res.ok) {
-                    const blob = await res.blob();
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        if(conn) conn.send({type: 'spawn', src: reader.result});
-                        $('phone-status').innerText = "✅ ГЕРОЙ НА ЭКРАНЕ!";
-                    };
-                    reader.readAsDataURL(blob);
-                } else { alert("Ошибка ИИ. Проверьте ключ."); }
-            } catch(e) { alert("Сбой сети"); }
-        }
+        $('phone-status').innerText = "✂️ ИИ ВЫРЕЗАЕТ ФОН...";
+        const fd = new FormData();
+        fd.append('image_file', file);
+
+        try {
+            const res = await fetch('https://api.remove.bg/v1.0/removebg', {
+                method: 'POST', headers: { 'X-Api-Key': aiKey }, body: fd
+            });
+            if(res.ok) {
+                const blob = await res.blob();
+                const reader = new FileReader();
+                reader.onload = () => {
+                    if(conn) conn.send({type: 'spawn', src: reader.result});
+                    $('phone-status').innerText = "✅ ГОТОВО!";
+                };
+                reader.readAsDataURL(blob);
+            }
+        } catch(e) { alert("Ошибка ИИ"); }
     }
 
     function spawnHero(src) {
@@ -191,11 +225,10 @@
         const ctrl = document.createElement('div');
         ctrl.className = 'h-ctrl';
         ctrl.id = 'c-'+id;
-        ctrl.innerHTML = `<img src="${src}" style="width:30px; height:30px; object-fit:contain;">
+        ctrl.innerHTML = `<img src="${src}">
             <input type="range" min="50" max="800" value="250" oninput="$('h-${id}').style.width=this.value+'px'">
-            <button onclick="removeHero(${id})" style="width:40px; background:#500; color:#fff">×</button>`;
+            <button onclick="removeHero(${id})" style="width:40px; background:#500">×</button>`;
         $('active-list').appendChild(ctrl);
-        $('side-panel').classList.add('open');
     }
 
     function removeHero(id) {
@@ -212,6 +245,7 @@
         });
         requestAnimationFrame(update);
     }
+    update();
 </script>
 </body>
 </html>
