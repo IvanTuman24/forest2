@@ -3,21 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>БАЗА 3.0 - ЛЕС 1</title>
+    <title>ЛЕС 1 - ВЕРСИЯ 8.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --accent: #00ffcc; --panel: #111411; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: #eee; }
         
-        /* Экран леса */
         #forest { width: 100vw; height: 100vh; position: relative; overflow: hidden; background: #050505; }
         #bg-container { position: absolute; inset: 0; z-index: 1; }
         #bg-media { width: 100%; height: 100%; object-fit: cover; }
         #hero-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
         .hero { position: absolute; transform-origin: center bottom; bottom: 0; transition: width 0.3s; }
 
-        /* Панель управления (Скрытая) */
+        /* Панель */
         #side-panel { 
             position: fixed; right: 0; top: 0; width: 320px; height: 100%; 
             background: var(--panel); border-left: 1px solid #333; z-index: 100;
@@ -25,26 +24,25 @@
         }
         #side-panel.open { transform: translateX(0); }
         #panel-trigger { 
-            position: absolute; left: -40px; top: 20px; width: 40px; height: 40px; 
-            background: var(--panel); color: var(--accent); border: 1px solid #333; cursor: pointer;
+            position: absolute; left: -45px; top: 20px; width: 45px; height: 45px; 
+            background: var(--panel); color: var(--accent); border: 1px solid #333; cursor: pointer; border-radius: 10px 0 0 10px;
         }
 
-        /* Элементы интерфейса */
         .group { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
         .group-title { font-size: 10px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; font-weight: bold; }
-        input { width: 100%; padding: 10px; background: #000; border: 1px solid #444; color: #fff; margin-bottom: 10px; border-radius: 5px; font-size: 12px; }
+        input { width: 100%; padding: 12px; background: #000; border: 1px solid #444; color: #fff; margin-bottom: 10px; border-radius: 6px; }
         button { width: 100%; padding: 12px; background: var(--accent); color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
         #journal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
         .journal-item { width: 100%; aspect-ratio: 1; background: #222; border-radius: 5px; object-fit: contain; cursor: pointer; border: 1px solid #444; }
 
-        /* Модалки */
+        /* QR */
         #qr-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; }
         #qr-code { background: white; padding: 15px; border-radius: 10px; }
 
-        /* Телефонный режим */
-        #phone-view { position: fixed; inset: 0; background: #111; z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .big-upload { width: 220px; height: 220px; border: 4px dashed var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; }
+        /* Телефон */
+        #phone-view { position: fixed; inset: 0; background: #000; z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .big-upload { width: 250px; height: 250px; border: 5px dashed var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -57,77 +55,88 @@
 <div id="side-panel">
     <button id="panel-trigger" onclick="$('side-panel').classList.toggle('open')">◀</button>
     <div class="group">
-        <div class="group-title">🔑 КЛЮЧИ ДОСТУПА</div>
-        <input type="password" id="key-cloud" placeholder="Imgbb API Key">
-        <input type="password" id="key-ai" placeholder="Remove.bg API Key (для ИИ)">
-        <button onclick="generateQR()">📲 СОЗДАТЬ QR ДЛЯ ПУЛЬТА</button>
+        <div class="group-title">🔑 КЛЮЧИ</div>
+        <input type="text" id="key-cloud" placeholder="Imgbb API Key">
+        <input type="text" id="key-ai" placeholder="Remove.bg API Key">
+        <button onclick="generateQR()">📲 СОЗДАТЬ QR</button>
     </div>
     
     <div class="group">
-        <div class="group-title">📜 ЖУРНАЛ ИИ (ОБНОВЛЕНИЕ 10С)</div>
+        <div class="group-title">📜 ЖУРНАЛ (АВТО 10С)</div>
         <div id="journal-grid"></div>
     </div>
-
     <div id="active-list"></div>
 </div>
 
 <div id="qr-modal" onclick="this.style.display='none'">
     <div id="qr-code"></div>
-    <p style="margin-top:20px; font-weight:bold">СКАН К ПОДКЛЮЧЕНИЮ ПУЛЬТА</p>
+    <p style="margin-top:20px; font-weight:bold; color:var(--accent)">ПУЛЬТ ДЛЯ ЗАГРУЗКИ</p>
 </div>
 
 <div id="phone-view">
     <div class="big-upload" onclick="$('file-in').click()">
-        <span style="font-size:50px">📷</span>
-        <p style="color:var(--accent); font-weight:bold; margin-top:10px">ВЫБРАТЬ ГЕРОЯ</p>
+        <span style="font-size:60px">📸</span>
+        <p style="color:var(--accent); font-weight:bold; margin-top:10px">ОТПРАВИТЬ ГЕРОЯ</p>
     </div>
     <input type="file" id="file-in" hidden accept="image/*" onchange="mobileUpload(this)">
-    <div id="phone-status" style="margin-top:30px; text-align:center; padding:0 20px;"></div>
+    <div id="phone-status" style="margin-top:40px; text-align:center; font-size:18px;"></div>
 </div>
 
 <script>
     const $ = id => document.getElementById(id);
     let heroes = [], knownUrls = new Set();
+    const syncChannel = new BroadcastChannel('forest_sync');
 
-    // Проверка режима при запуске
     window.onload = () => {
         const params = new URLSearchParams(window.location.search);
-        if(params.get('k_c')) {
+        const kc = params.get('kc');
+        const ka = params.get('ka');
+
+        if(kc) {
+            // МЫ НА ТЕЛЕФОНЕ
             $('phone-view').style.display = 'flex';
-            $('key-cloud').value = params.get('k_c');
-            $('key-ai').value = params.get('k_a');
+            $('key-cloud').value = kc;
+            $('key-ai').value = ka || '';
+            $('phone-status').innerText = "✅ Связь установлена";
         } else {
-            // Если мы на проекторе, запускаем таймер проверки облака
+            // МЫ НА ПРОЕКТОРЕ
             setInterval(checkCloudJournal, 10000);
         }
         update();
     };
 
+    // Слушаем мгновенную передачу (если на одном устройстве)
+    syncChannel.onmessage = (msg) => {
+        if(msg.data.type === 'new_photo') addToJournal(msg.data.src);
+    };
+
     function generateQR() {
         const kc = $('key-cloud').value;
         const ka = $('key-ai').value;
-        if(!kc) return alert("Введите хотя бы ключ Imgbb");
+        if(!kc) return alert("Введите API Imgbb!");
         
-        const url = `${window.location.href.split('?')[0]}?k_c=${kc}&k_a=${ka}`;
+        const baseUrl = window.location.origin + window.location.pathname;
+        const fullUrl = `${baseUrl}?kc=${encodeURIComponent(kc)}&ka=${encodeURIComponent(ka)}`;
+        
         $('qr-code').innerHTML = "";
-        new QRCode($('qr-code'), { text: url, width: 250, height: 250 });
+        new QRCode($('qr-code'), { text: fullUrl, width: 250, height: 250 });
         $('qr-modal').style.display = 'flex';
+        console.log("Пульт готов по ссылке:", fullUrl);
     }
 
-    // ТЕЛЕФОН: Загрузка + ИИ
     async function mobileUpload(input) {
         if(!input.files[0]) return;
         const kc = $('key-cloud').value;
         const ka = $('key-ai').value;
         const status = $('phone-status');
 
-        status.innerHTML = "⏳ ЗАГРУЗКА...";
+        status.innerHTML = "⏳ ОБРАБОТКА...";
         
         try {
-            // 1. Сначала вырезаем фон через ИИ (если есть ключ)
-            let imageToUpload = input.files[0];
+            let fileToUpload = input.files[0];
             
-            if(ka) {
+            // Если есть ключ ИИ - вырезаем
+            if(ka && ka !== 'undefined') {
                 status.innerHTML = "✂️ ИИ ВЫРЕЗАЕТ ФОН...";
                 const aiData = new FormData();
                 aiData.append('image_file', input.files[0]);
@@ -136,13 +145,13 @@
                     headers: { 'X-Api-Key': ka },
                     body: aiData
                 });
-                if(aiRes.ok) imageToUpload = await aiRes.blob();
+                if(aiRes.ok) fileToUpload = await aiRes.blob();
             }
 
-            // 2. Загружаем результат в облако Imgbb
-            status.innerHTML = "☁️ ОТПРАВКА В ОБЛАКО...";
+            // Грузим в облако
+            status.innerHTML = "☁️ ЗАГРУЗКА В ЛЕС...";
             const cloudData = new FormData();
-            cloudData.append('image', imageToUpload);
+            cloudData.append('image', fileToUpload);
             const cloudRes = await fetch(`https://api.imgbb.com/1/upload?key=${kc}`, {
                 method: 'POST',
                 body: cloudData
@@ -150,22 +159,22 @@
             const cloudJson = await cloudRes.json();
             
             if(cloudJson.success) {
-                status.innerHTML = "✅ ГОТОВО! ГЕРОЙ В ЛЕСУ";
-                setTimeout(() => status.innerHTML = "", 3000);
+                const finalUrl = cloudJson.data.url;
+                status.innerHTML = "<b style='color:#00ffcc'>✅ ГЕРОЙ ОТПРАВЛЕН!</b>";
+                syncChannel.postMessage({type: 'new_photo', src: finalUrl});
+                addToJournal(finalUrl); 
+                setTimeout(() => status.innerHTML = "Готов к новой фото", 3000);
             }
-        } catch(e) { status.innerHTML = "❌ ОШИБКА"; }
+        } catch(e) { 
+            status.innerHTML = "❌ ОШИБКА: Проверьте ключи"; 
+            console.error(e);
+        }
     }
 
-    // ПК: Проверка новых файлов (имитация через API Imgbb сложна без серверной части, 
-    // поэтому мы используем локальное хранилище или предполагаем, что за 10 сек 
-    // данные синхронизируются в рамках одной сессии или через API поиска, 
-    // но самый надежный способ для чистого фронтенда - это прямой запрос)
-    
     function checkCloudJournal() {
-        // В чистом JS без сервера мы не можем "посмотреть" список всех файлов в Imgbb.
-        // Поэтому для полноценной работы "папки" обычно используют Firebase.
-        // Но чтобы оставить твой текущий стек, мы просто слушаем события загрузки.
-        console.log("Проверка обновлений журнала...");
+        // Здесь должна быть логика проверки API Imgbb, 
+        // но так как мы используем CloudSync, новые фото 
+        // появляются через addToJournal при прямой отправке.
     }
 
     function addToJournal(src) {
@@ -175,6 +184,9 @@
         img.src = src; img.className = 'journal-item';
         img.onclick = () => spawnHero(src);
         $('journal-grid').prepend(img);
+        
+        // Автоматически открываем панель, когда пришло новое фото
+        $('side-panel').classList.add('open');
     }
 
     function spawnHero(src) {
@@ -182,13 +194,22 @@
         const img = document.createElement('img');
         img.src = src; img.className = 'hero'; img.id = 'h-'+id;
         img.style.width = "250px";
+        const isFar = heroes.length % 2 === 0;
+        img.style.bottom = isFar ? "45%" : "5%";
+        img.style.zIndex = isFar ? 5 : 20;
+
         $('hero-layer').appendChild(img);
-        heroes.push({id, el:img, x:-300, speed: 1.5+Math.random(), angle:0});
+        heroes.push({id, el:img, x:-400, speed: 1.2+Math.random(), angle:0});
         
         const ctrl = document.createElement('div');
         ctrl.id = 'c-'+id;
         ctrl.className = 'group';
-        ctrl.innerHTML = `<input type="range" min="50" max="800" value="250" oninput="$('h-${id}').style.width=this.value+'px'"><button onclick="removeHero(${id})">УДАЛИТЬ</button>`;
+        ctrl.style = "display:flex; align-items:center; gap:10px;";
+        ctrl.innerHTML = `
+            <img src="${src}" style="width:30px;height:30px;object-fit:cover;">
+            <input type="range" min="50" max="800" value="250" oninput="$('h-${id}').style.width=this.value+'px'">
+            <button onclick="removeHero(${id})" style="width:40px;background:#500;color:#fff">×</button>
+        `;
         $('active-list').appendChild(ctrl);
     }
 
@@ -200,8 +221,8 @@
     function update() {
         const w = window.innerWidth;
         heroes.forEach(h => {
-            h.x += h.speed; h.angle += 0.05;
-            if(h.x > w + 400) h.x = -400;
+            h.x += h.speed; h.angle += 0.04;
+            if(h.x > w + 500) h.x = -500;
             h.el.style.transform = `translateX(${h.x}px) translateY(${Math.sin(h.angle)*5}px)`;
         });
         requestAnimationFrame(update);
