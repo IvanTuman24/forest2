@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ЛЕС 1 - ВЕРСИЯ 8.8</title>
+    <title>ЛЕС 1 - ВЕРСИЯ 8.9</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -17,11 +17,10 @@
         #hero-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
         .hero { position: absolute; transform-origin: center bottom; bottom: 0; }
 
-        /* Панель */
         #side-panel { 
             position: fixed; right: 0; top: 0; width: 320px; height: 100%; 
             background: var(--panel); border-left: 1px solid #333; z-index: 100;
-            transform: translateX(100%); transition: 0.4s; padding: 20px;
+            transform: translateX(100%); transition: 0.4s; padding: 20px; overflow-y: auto;
         }
         #side-panel.open { transform: translateX(0); }
         #panel-trigger { 
@@ -32,18 +31,13 @@
         .group { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
         .group-title { font-size: 10px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; font-weight: bold; }
         input { width: 100%; padding: 12px; background: #000; border: 1px solid #444; color: #fff; margin-bottom: 10px; border-radius: 6px; }
-        button { width: 100%; padding: 12px; background: var(--accent); color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
+        button { width: 100%; padding: 12px; background: var(--accent); color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        #journal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .journal-item { width: 100%; aspect-ratio: 1; background: #222; border-radius: 5px; object-fit: contain; cursor: pointer; border: 1px solid #444; }
+        #active-list .h-ctrl { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 8px; margin-bottom: 8px; }
 
-        /* QR */
-        #qr-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        #qr-code { background: white; padding: 15px; border-radius: 10px; }
-
-        /* Телефон */
         #phone-view { position: fixed; inset: 0; background: #000; z-index: 3000; display: none; flex-direction: column; padding: 20px; overflow-y: auto; }
         .big-upload { width: 100%; padding: 30px; border: 3px dashed var(--accent); border-radius: 15px; text-align: center; margin-bottom: 20px; }
+        .phone-journal-item { width: 100%; aspect-ratio: 1; border: 2px solid #333; border-radius: 8px; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -56,97 +50,83 @@
 <div id="side-panel">
     <button id="panel-trigger" onclick="$('side-panel').classList.toggle('open')">◀</button>
     <div class="group">
-        <div class="group-title">🔑 НАСТРОЙКА</div>
-        <input type="text" id="key-cloud" placeholder="Imgbb API Key">
-        <input type="text" id="room-id" placeholder="ID комнаты (любой текст)">
-        <button onclick="generateQR()">📲 ПОДКЛЮЧИТЬ ПУЛЬТ</button>
+        <div class="group-title">🔑 СИСТЕМА</div>
+        <input type="text" id="key-cloud" placeholder="Ключ Imgbb">
+        <input type="text" id="room-id" placeholder="ID Комнаты">
+        <button onclick="generateQR()">📲 ПОЛУЧИТЬ QR</button>
     </div>
-    
-    <div class="group">
-        <div class="group-title">📜 ЖУРНАЛ (ОБНОВЛЕНИЕ 2С)</div>
-        <div id="journal-grid"></div>
-    </div>
+    <div class="group-title">👥 ГЕРОИ В ЛЕСУ</div>
+    <div id="active-list"></div>
 </div>
 
-<div id="qr-modal" onclick="this.style.display='none'">
-    <div id="qr-code"></div>
-    <p style="margin-top:20px; font-weight:bold; color:var(--accent)">СКАН ДЛЯ ПУЛЬТА</p>
+<div id="qr-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:2000;" onclick="this.style.display='none'">
+    <div id="qr-code" style="background:white; padding:15px; border-radius:10px;"></div>
 </div>
 
 <div id="phone-view">
-    <div class="group-title">ПУЛЬТ УПРАВЛЕНИЯ</div>
+    <div class="group">
+        <div class="group-title">⚙️ НАСТРОЙКА ИИ</div>
+        <input type="text" id="key-ai" placeholder="Вставьте ключ Remove.bg">
+    </div>
     <div class="big-upload" onclick="$('file-in').click()">
         <span style="font-size:40px">📷</span>
-        <p style="color:var(--accent); font-weight:bold; margin-top:10px">ЗАГРУЗИТЬ В ЖУРНАЛ</p>
+        <p style="margin-top:10px">ЗАГРУЗИТЬ ГЕРОЯ</p>
     </div>
     <input type="file" id="file-in" hidden accept="image/*" onchange="mobileUpload(this)">
     
     <div class="group">
-        <div class="group-title">ВАШ ЖУРНАЛ</div>
-        <div id="phone-journal" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;"></div>
+        <div class="group-title">ЖУРНАЛ (Кликни, чтобы отправить в лес)</div>
+        <div id="phone-journal" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;"></div>
     </div>
-    <div id="phone-status" style="text-align:center; font-size:14px; color: var(--accent);"></div>
+    <div id="phone-status" style="text-align:center; color: var(--accent);"></div>
 </div>
 
 <script>
     const $ = id => document.getElementById(id);
-    let heroes = [], knownUrls = new Set();
-    let peer, conn;
+    let heroes = [], peer, conn;
 
     window.onload = () => {
         const params = new URLSearchParams(window.location.search);
-        const kc = params.get('kc');
-        const rid = params.get('rid');
-
-        if(kc && rid) {
-            // РЕЖИМ ТЕЛЕФОНА
+        if(params.get('kc')) {
             $('phone-view').style.display = 'flex';
-            $('key-cloud').value = kc;
-            $('room-id').value = rid;
-            initPeer("P-" + rid + "-" + Math.floor(Math.random()*1000), "S-" + rid);
-        } else {
-            // РЕЖИМ ЭКРАНА - ждем ввода ID комнаты
+            $('key-cloud').value = params.get('kc');
+            $('room-id').value = params.get('rid');
+            initPeer("P-" + params.get('rid'), "S-" + params.get('rid'));
         }
         update();
     };
 
     function initPeer(myId, targetId) {
         peer = new Peer(myId);
-        peer.on('open', () => {
-            if(targetId) {
-                conn = peer.connect(targetId);
-                conn.on('open', () => $('phone-status').innerText = "✅ СВЯЗЬ С ЭКРАНОМ ЕСТЬ");
-            }
-        });
         peer.on('connection', c => {
             conn = c;
-            conn.on('data', d => { if(d.type === 'sync') addToJournal(d.src); });
+            conn.on('data', d => { if(d.type === 'spawn') spawnHero(d.src); });
         });
+        if(targetId) {
+            const tryConnect = () => {
+                conn = peer.connect(targetId);
+                conn.on('open', () => $('phone-status').innerText = "✅ ПОДКЛЮЧЕНО К ЭКРАНУ");
+            };
+            setTimeout(tryConnect, 1000);
+        }
     }
 
     function generateQR() {
         const kc = $('key-cloud').value;
         const rid = $('room-id').value;
-        if(!kc || !rid) return alert("Введите API Ключ и любой ID комнаты!");
-        
-        initPeer("S-" + rid, null); // Инициализируем серверную часть на экране
-        
-        const baseUrl = window.location.origin + window.location.pathname;
-        const fullUrl = `${baseUrl}?kc=${encodeURIComponent(kc)}&rid=${encodeURIComponent(rid)}`;
-        
+        if(!kc || !rid) return alert("Заполните ключи!");
+        initPeer("S-" + rid, null);
+        const url = `${window.location.origin}${window.location.pathname}?kc=${kc}&rid=${rid}`;
         $('qr-code').innerHTML = "";
-        new QRCode($('qr-code'), { text: fullUrl, width: 250, height: 250 });
+        new QRCode($('qr-code'), { text: url, width: 220, height: 220 });
         $('qr-modal').style.display = 'flex';
-        
-        // Запуск "сканера" папки (в данном случае - ожидание данных)
-        setInterval(() => { console.log("Синхронизация..."); }, 2000);
     }
 
     async function mobileUpload(input) {
         if(!input.files[0]) return;
         const kc = $('key-cloud').value;
         const status = $('phone-status');
-        status.innerText = "⏳ ЗАГРУЗКА...";
+        status.innerText = "⏳ ЗАГРУЗКА В ОБЛАКО...";
 
         const fd = new FormData();
         fd.append('image', input.files[0]);
@@ -155,29 +135,46 @@
             const res = await fetch(`https://api.imgbb.com/1/upload?key=${kc}`, { method: 'POST', body: fd });
             const json = await res.json();
             if(json.success) {
-                const url = json.data.url;
-                status.innerText = "✅ ОТПРАВЛЕНО!";
-                
-                // Добавляем в журнал телефона
-                const img = document.createElement('img');
-                img.src = url; img.style = "width:100%; aspect-ratio:1; object-fit:cover; border-radius:5px;";
-                $('phone-journal').prepend(img);
-
-                // Шлем данные на экран
-                if(conn) conn.send({type: 'sync', src: url});
-                addToJournal(url); // Если открыто на одном устр.
+                status.innerText = "✅ В ЖУРНАЛЕ";
+                createJournalThumbnail(json.data.url, input.files[0]);
             }
-        } catch(e) { status.innerText = "❌ ОШИБКА"; }
+        } catch(e) { status.innerText = "❌ ОШИБКА ОБЛАКА"; }
     }
 
-    function addToJournal(src) {
-        if(knownUrls.has(src)) return;
-        knownUrls.add(src);
+    function createJournalThumbnail(url, originalFile) {
         const img = document.createElement('img');
-        img.src = src; img.className = 'journal-item';
-        img.onclick = () => spawnHero(src);
-        $('journal-grid').prepend(img);
-        $('side-panel').classList.add('open');
+        img.src = url;
+        img.className = 'phone-journal-item';
+        img.onclick = () => confirmToForest(originalFile);
+        $('phone-journal').prepend(img);
+    }
+
+    async function confirmToForest(file) {
+        const aiKey = $('key-ai').value;
+        if(!aiKey) return alert("Введите ключ Remove.bg в поле настройки ИИ!");
+        
+        if(confirm("Отправить этого героя на экран? (Будет использован кредит ИИ)")) {
+            $('phone-status').innerText = "✂️ ИИ ВЫРЕЗАЕТ ФОН...";
+            const fd = new FormData();
+            fd.append('image_file', file);
+
+            try {
+                const res = await fetch('https://api.remove.bg/v1.0/removebg', {
+                    method: 'POST',
+                    headers: { 'X-Api-Key': aiKey },
+                    body: fd
+                });
+                if(res.ok) {
+                    const blob = await res.blob();
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        if(conn) conn.send({type: 'spawn', src: reader.result});
+                        $('phone-status').innerText = "✅ ГЕРОЙ НА ЭКРАНЕ!";
+                    };
+                    reader.readAsDataURL(blob);
+                } else { alert("Ошибка ИИ. Проверьте ключ."); }
+            } catch(e) { alert("Сбой сети"); }
+        }
     }
 
     function spawnHero(src) {
@@ -190,6 +187,20 @@
         img.style.zIndex = isFar ? 5 : 20;
         $('hero-layer').appendChild(img);
         heroes.push({id, el:img, x:-400, speed: 1.2+Math.random(), angle:0});
+
+        const ctrl = document.createElement('div');
+        ctrl.className = 'h-ctrl';
+        ctrl.id = 'c-'+id;
+        ctrl.innerHTML = `<img src="${src}" style="width:30px; height:30px; object-fit:contain;">
+            <input type="range" min="50" max="800" value="250" oninput="$('h-${id}').style.width=this.value+'px'">
+            <button onclick="removeHero(${id})" style="width:40px; background:#500; color:#fff">×</button>`;
+        $('active-list').appendChild(ctrl);
+        $('side-panel').classList.add('open');
+    }
+
+    function removeHero(id) {
+        const h = heroes.find(x => x.id === id);
+        if(h) { h.el.remove(); $(`c-${id}`).remove(); heroes = heroes.filter(x => x.id !== id); }
     }
 
     function update() {
